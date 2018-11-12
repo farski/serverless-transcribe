@@ -10,6 +10,14 @@ Periodically, after each job has started, another Lambda function checks on the 
 
 The webpage is protected by HTTP Basic authentication, with a single set of credentials. This is handled by an authorizer on the [API Gateway](https://aws.amazon.com/api-gateway/), and could be extended to allow for more complicated authorization schemes.
 
+### AWS Costs
+
+The cost of running and using this project are almost entirely based on usage. Media files uploaded to S3 are set to expire after 1 day, and the resulting files in the transcripts bucket expire after 30 days. The Lambda functions have no fixed costs, so you will only be charged when they are invoked. Amazon Transcribe is "[pay-as-you-go](https://aws.amazon.com/transcribe/pricing/) based on the seconds of audio transcribed per month".
+
+One Lambda function has an [SQS](https://aws.amazon.com/sqs/) event source, which uses long polling to watch for messages. The function is only called when messages are availabe in the queue, but the polling will generate API calls to SQS on a fairly continous basis. Please see the end of this [blog post](https://aws.amazon.com/blogs/aws/aws-lambda-adds-amazon-simple-queue-service-to-supported-event-sources/) for more information.
+
+Most resources created from the CloudFormation template include a `Project` resource tag, which you can use for cost allocation. Unfortunately Amazon Transcribe jobs cannot be tracked this way.
+
 ## How to Use
 
 The project is organized using a CloudFormation [template](https://github.com/farski/serverless-transcribe/blob/master/serverless-transcribe.yml). Launching a stack from this template will create all the resources necessary for the system to work.
