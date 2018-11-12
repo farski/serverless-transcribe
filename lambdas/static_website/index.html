@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang=en>
+  <head>
+    <meta charset=utf-8 />
+    <title>Transcription</title>
+  </head>
+  <body>
+    <script>
+      function getStuff() {
+        return new Promise((resolve, reject) => {
+          const url = `https://${window.location.host}/omega/v1/browser-based-upload`;
+
+          fetch(url)
+            .then(response => response.json())
+            .then(data => resolve(data))
+            .catch(e => reject(e));
+        });
+      }
+
+      function validate() {
+        if (!document.getElementById('s3_upload').getAttribute('action')) { return; }
+
+        if (!document.getElementById('s3_policy').value) { return; }
+        if (!document.getElementById('s3_amz_signature').value) { return; }
+        if (!document.getElementById('s3_success_action_redirect').value) { return; }
+
+        if (!document.getElementById('s3_object_key').value) { return; }
+        if (!document.getElementById('s3_object_content_type').value) { return; }
+
+        if (!document.getElementById('s3_amz_meta_email').value) { return; }
+
+        document.getElementById('s3_submit').removeAttribute('disabled');
+      }
+
+      (function () {
+        document.addEventListener("DOMContentLoaded", _ => {
+          document.getElementById('s3_success_action_redirect').value = window.location.href;
+
+          const file_selector = document.getElementById('s3_file');
+          file_selector.addEventListener('change', ev => {
+            const file = file_selector.files[0]
+
+            document.getElementById('s3_object_content_type').value = file.type;
+            document.getElementById('s3_object_key').value = `audio/${+(new Date)}_${file.name}`;
+
+            validate();
+          });
+
+          const email_field = document.getElementById('s3_amz_meta_email');
+          email_field.addEventListener('keydown', ev => {
+            validate();
+          });
+        });
+      })();
+
+      (async function () {
+        const stuff = await getStuff();
+
+        document.getElementById('s3_upload').setAttribute('action', `https://${stuff.bucket_domain_name}`);
+
+        document.getElementById('s3_policy').value = stuff.base64_policy;
+        document.getElementById('s3_amz_algorithm').value = stuff.amz_algorithm;
+        document.getElementById('s3_amz_credential').value = stuff.amz_credential;
+        document.getElementById('s3_amz_date').value = stuff.amz_date;
+        document.getElementById('s3_amz_signature').value = stuff.signature;
+
+        validate();
+      })();
+    </script>
+
+    <!-- https://docs.aws.amazon.com/AmazonS3/latest/API/sigv4-HTTPPOSTForms.html -->
+    <form id=s3_upload method=post enctype=multipart/form-data>
+      <input type=hidden name=Content-Type id=s3_object_content_type>
+      <input type=hidden name=key id=s3_object_key>
+      <input type=hidden name=policy id=s3_policy>
+      <input type=hidden name=success_action_redirect id=s3_success_action_redirect>
+      <input type=hidden name=x-amz-algorithm id=s3_amz_algorithm>
+      <input type=hidden name=x-amz-credential id=s3_amz_credential>
+      <input type=hidden name=x-amz-date id=s3_amz_date>
+      <input type=hidden name=x-amz-signature id=s3_amz_signature>
+
+      <fieldset>
+        <label for=email>Email</label>
+        <input name=x-amz-meta-email id=s3_amz_meta_email>
+      </fieldset>
+
+      <!-- Any POST data after the `file` field is ignored by S3 -->
+      <fieldset>
+        <label for=file>File</label>
+        <input type=file name=file id=s3_file accept=".mp3,.mp4,.m4a,.wav">
+      </fieldset>
+
+      <input type=submit name=submit value=Upload disabled=disabled id=s3_submit>
+    </form>
+  </body>
+</html>

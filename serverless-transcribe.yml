@@ -1,0 +1,404 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  Easy serverless Amazon Trascribe
+Parameters:
+  MediaBucketIdentifier:
+    Type: String
+  UploadAccessKeyId:
+    Type: String
+  UploadSecretAccessKey:
+    Type: String
+  StackResourcesBucket:
+    Type: String
+  StackResourcesPrefix:
+    Type: String
+Resources:
+  TranscriptionsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      LifecycleConfiguration:
+        Rules:
+          - ExpirationInDays: 30
+            Status: Enabled
+      Tags:
+        - Key: Project
+          Value: serverless-transcribe
+  MediaBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${AWS::StackName}-${MediaBucketIdentifier}"
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders:
+               - "*"
+            AllowedMethods:
+              - "POST"
+            AllowedOrigins:
+              - "*"
+      LifecycleConfiguration:
+        Rules:
+          - ExpirationInDays: 1
+            Status: Enabled
+      NotificationConfiguration:
+        LambdaConfigurations:
+          - Event: s3:ObjectCreated:*
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: suffix
+                    Value: .mp3
+            Function: !GetAtt TranscriptionJobStartFunction.Arn
+          - Event: s3:ObjectCreated:*
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: suffix
+                    Value: .mp4
+            Function: !GetAtt TranscriptionJobStartFunction.Arn
+          - Event: s3:ObjectCreated:*
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: suffix
+                    Value: .m4a
+            Function: !GetAtt TranscriptionJobStartFunction.Arn
+          - Event: s3:ObjectCreated:*
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: suffix
+                    Value: .wav
+            Function: !GetAtt TranscriptionJobStartFunction.Arn
+      Tags:
+        - Key: Project
+          Value: serverless-transcribe
+  # Transcription Job Start
+  TranscriptionJobStartFunctionMediaBucketPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt TranscriptionJobStartFunction.Arn
+      Principal: s3.amazonaws.com
+      SourceArn: !Sub "arn:aws:s3:::${AWS::StackName}-${MediaBucketIdentifier}"
+  TranscriptionJobStartFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket: !Ref StackResourcesBucket
+        S3Key: !Sub "${StackResourcesPrefix}/lambdas/transcription_job_start.zip"
+      Description: >
+        Starts transcription jobs when triggered by S3 events
+      Environment:
+        Variables:
+          TRANSCRIPTIONS_OUTPUT_BUCKET: !Ref TranscriptionsBucket
+          TRANSCRIPTION_JOB_SCAN_QUEUE_URL: !Ref TranscriptionJobScanQueue
+      Handler: lambda_function.lambda_handler
+      MemorySize: 128
+      Role: !GetAtt TranscriptionJobStartFunctionIamRole.Arn
+      Runtime: python3.6
+      Tags:
+        - Key: Project
+          Value: serverless-transcribe
+      Timeout: 3
+  TranscriptionJobStartFunctionIamRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: "/"
+      Policies:
+        - PolicyName: MediaBucketReadOnly
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:ListBucket
+                  - s3:GetObject
+                  - s3:PutObjectTagging
+                Resource:
+                  - !Sub "arn:aws:s3:::${AWS::StackName}-${MediaBucketIdentifier}"
+                  - !Sub "arn:aws:s3:::${AWS::StackName}-${MediaBucketIdentifier}/*"
+        - PolicyName: TranscriptionsBucketWriteAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:Get*
+                  - s3:List*
+                  - s3:Put*
+                Resource:
+                  - !GetAtt TranscriptionsBucket.Arn
+                  - !Sub "${TranscriptionsBucket.Arn}/*"
+        - PolicyName: Transcribe
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - transcribe:GetTranscriptionJob
+                  - transcribe:StartTranscriptionJob
+                Resource:
+                  - "*"
+        - PolicyName: SQSSendMessage
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sqs:SendMessage
+                Resource:
+                  - !GetAtt TranscriptionJobScanQueue.Arn
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+  # Transcription Job Scan
+  TranscriptionJobScanQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      DelaySeconds: 300
+      Tags:
+        - Key: Project
+          Value: serverless-transcribe
+      VisibilityTimeout: 300
+  TranscriptionJobScanFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket: !Ref StackResourcesBucket
+        S3Key: !Sub "${StackResourcesPrefix}/lambdas/transcription_job_scan.zip"
+      Description: >
+        Checks on transcription jobs
+      Environment:
+        Variables:
+          TRANSCRIPTION_JOB_SCAN_QUEUE_URL: !Ref TranscriptionJobScanQueue
+      Handler: lambda_function.lambda_handler
+      MemorySize: 128
+      Role: !GetAtt TranscriptionJobScanFunctionIamRole.Arn
+      Runtime: python3.6
+      Tags:
+        - Key: Project
+          Value: serverless-transcribe
+      Timeout: 3
+  TranscriptionJobScanFunctionIamRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: "/"
+      Policies:
+        - PolicyName: MediaBucketReadOnly
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                Resource:
+                  - !Sub "${MediaBucket.Arn}/*"
+        - PolicyName: TranscriptionsBucketWriteAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                Resource:
+                  - !Sub "${TranscriptionsBucket.Arn}/*"
+        - PolicyName: Transcribe
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - transcribe:GetTranscriptionJob
+                Resource:
+                  - "*"
+        - PolicyName: SESSendEmail
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ses:SendEmail
+                Resource:
+                  - "*"
+        - PolicyName: SQSSendMessage
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sqs:SendMessage
+                Resource:
+                  - !GetAtt TranscriptionJobScanQueue.Arn
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaSQSQueueExecutionRole
+  TranscriptionJobScanEventSourceMapping:
+    Type: AWS::Lambda::EventSourceMapping
+    Properties:
+      BatchSize: 1
+      Enabled: true
+      EventSourceArn: !GetAtt TranscriptionJobScanQueue.Arn
+      FunctionName: !GetAtt TranscriptionJobScanFunction.Arn
+  # Website API
+  WebsiteApiFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket: !Ref StackResourcesBucket
+        S3Key: !Sub "${StackResourcesPrefix}/lambdas/website_api.zip"
+      Description: >
+        Provides a simple API for browser-based S3 uploading
+      Environment:
+        Variables:
+          MEDIA_BUCKET: !Ref MediaBucket
+          MEDIA_BUCKET_DOMAIN_NAME: !GetAtt MediaBucket.RegionalDomainName
+          UPLOAD_ACCESS_KEY_ID: !Ref UploadAccessKeyId
+          UPLOAD_SECRET_ACCESS_KEY: !Ref UploadSecretAccessKey
+      Handler: lambda_function.lambda_handler
+      MemorySize: 128
+      Role: !GetAtt WebsiteApiFunctionIamRole.Arn
+      Runtime: python3.6
+      Tags:
+        - Key: Project
+          Value: serverless-transcribe
+      Timeout: 3
+  WebsiteApiFunctionIamRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: "/"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+  WebsiteApi:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: !Ref AWS::StackName
+      Description: Transcription website API
+  WebsiteApiStage:
+    Type: AWS::ApiGateway::Stage
+    Properties:
+      StageName: omega
+      RestApiId: !Ref WebsiteApi
+      DeploymentId: !Ref WebsiteApiDeployment
+  WebsiteApiDeployment:
+    DependsOn:
+      - WebsiteApiBrowserBasedUploadMethod
+    Type: AWS::ApiGateway::Deployment
+    Properties:
+      RestApiId: !Ref WebsiteApi
+  WebsiteApiV1Resource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref WebsiteApi
+      ParentId: !GetAtt WebsiteApi.RootResourceId
+      PathPart: v1
+  WebsiteApiBrowserBasedUploadResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref WebsiteApi
+      ParentId: !Ref WebsiteApiV1Resource
+      PathPart: browser-based-upload
+  WebsiteApiBrowserBasedUploadMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref WebsiteApi
+      ResourceId: !Ref WebsiteApiBrowserBasedUploadResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${WebsiteApiFunction.Arn}/invocations
+  WebsiteApiBrowserBasedUploadMethodInvokeFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref WebsiteApiFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${WebsiteApi}/${WebsiteApiStage}/*"
+  # Static Website
+  StaticWebsiteFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket: !Ref StackResourcesBucket
+        S3Key: !Sub "${StackResourcesPrefix}/lambdas/static_website.zip"
+      Description: >
+        Provides a simple API for browser-based S3 uploading
+      # Environment:
+      #   Variables:
+      #     MEDIA_BUCKET: !Ref MediaBucket
+      #     MEDIA_BUCKET_DOMAIN_NAME: !GetAtt MediaBucket.RegionalDomainName
+      #     UPLOAD_ACCESS_KEY_ID: !Ref UploadAccessKeyId
+      #     UPLOAD_SECRET_ACCESS_KEY: !Ref UploadSecretAccessKey
+      Handler: lambda_function.lambda_handler
+      MemorySize: 128
+      Role: !GetAtt StaticWebsiteFunctionIamRole.Arn
+      Runtime: python3.6
+      Tags:
+        - Key: Project
+          Value: serverless-transcribe
+      Timeout: 3
+  StaticWebsiteFunctionIamRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: "/"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+  StaticWebsiteResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref WebsiteApi
+      ParentId: !GetAtt WebsiteApi.RootResourceId
+      PathPart: upload
+  StaticWebsiteMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref WebsiteApi
+      ResourceId: !Ref StaticWebsiteResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${StaticWebsiteFunction.Arn}/invocations
+  StaticWebsiteMethodInvokeFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref StaticWebsiteFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${WebsiteApi}/${WebsiteApiStage}/*"
