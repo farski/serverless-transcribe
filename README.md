@@ -19,7 +19,7 @@ The project is organized using a CloudFormation [template](https://github.com/fa
 - The stack must be launched in an AWS region that supports [SES](https://aws.amazon.com/ses/). There aren't many of these, unfortunately. The addresses that SES will send to and from are determined by your SES domain verification and sandboxing status.
 - There must be a pre-existing S3 bucket where resources (like Lambda function code) needed to launch the stack can be found. This can be any bucket that CloudFormation will have read access to when launching the stack (based on the role used to execute the launch).
 
-### Using the Deply Script
+### Using the Deploy Script
 
 Included in this project is a [deploy script](https://github.com/farski/serverless-transcribe/blob/master/deploy.sh). Launching and updating the stack using this script is probably easier than using the AWS Console. In order to use the script, create a `.env` file in the repository directory (look at `.env.example` for reference), and run `./deploy.sh` (You may need to `chmod +x deploy.sh` prior to running the script.)
 
