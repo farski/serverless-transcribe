@@ -480,3 +480,7 @@ Resources:
                   - !GetAtt StaticWebsiteAuthorizerFunction.Arn
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+Outputs:
+  UploadWebpageUrl:
+    Description: The URL for the webpage used to upload media
+    Value: !Sub "https://${WebsiteApi}.execute-api.${AWS::Region}.amazonaws.com/${WebsiteApiStage}/upload"
