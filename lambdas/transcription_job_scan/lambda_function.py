@@ -1,3 +1,11 @@
+# This function is subscribed to an SQS queue that has messages corresponding
+# to new and in-progress transcription jobs. The messages are delayed. When
+# a message is sent to the function, the status of the corresponding job is
+# checked. If the job is still in progress, it is sent back to the queue (as a
+# new message). If the job has completed, an email containing the transcript
+# is sent. The recipient is garnered from the metadata of the media file that
+# was used to create the transcription job.
+
 import boto3
 import json
 import os
@@ -46,6 +54,8 @@ def lambda_handler(event, context):
     transcription_job_data = get_transcript_data(transcription_job_name)
 
     if transcription_job_data is not None:
+        # If the job is complete, fetch the email to where the the transcript
+        # should be sent, and send the email
         transcripts = transcription_job_data['results']['transcripts']
         transcript = transcripts[0]['transcript']
 
@@ -74,6 +84,7 @@ def lambda_handler(event, context):
             }
         )
     else:
+        # Put the job back on the queue to get checked again in several minutes
         sqs.send_message(
             QueueUrl=os.environ['TRANSCRIPTION_JOB_SCAN_QUEUE_URL'],
             MessageBody=transcription_job_name,

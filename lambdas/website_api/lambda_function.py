@@ -1,3 +1,12 @@
+# The static webpage used to upload media files for transcriptions uploads the
+# files directly to S3. In order for this to work, the POST request made by the
+# form on the website to the S3 bucket URL must include several things. These
+# include a base 64 encoded copy of the policy used to control uploads to the
+# bucket, as well as a signature created using the V4 signing method. There are
+# some other things S3 expects in the POST data as well. This function returns
+# a JSON object containing those data so the webpage has access to those
+# values. It backs an API Gateway endpoint.
+
 import json
 import os
 import base64
