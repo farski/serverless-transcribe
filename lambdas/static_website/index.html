@@ -4,7 +4,7 @@
     <meta charset=utf-8 />
     <title>Transcription</title>
   </head>
-  <body>
+  <body style="margin: 100px auto 0; width: 75%;">
     <script>
       function getStuff() {
         return new Promise((resolve, reject) => {
@@ -80,16 +80,19 @@
       <input type=hidden name=x-amz-signature id=s3_amz_signature>
 
       <fieldset>
-        <label for=email>Email</label>
+        <label for=s3_amz_meta_email>Email</label>
         <input name=x-amz-meta-email id=s3_amz_meta_email>
+        <p>The transcript will be emailed to this address</p>
       </fieldset>
 
       <!-- Any POST data after the `file` field is ignored by S3 -->
       <fieldset>
-        <label for=file>File</label>
+        <label for=s3_file>File</label>
         <input type=file name=file id=s3_file accept=".mp3,.mp4,.m4a,.wav">
+        <p>Supports: MP3, MP4, and WAV. Limits: 2 hours, 1 GB</p>
       </fieldset>
 
+      <p>Once the upload completes, the file will be processed in the cloud. You will receive an email with the transcript once it is complete. This can take some time, depending on the length of the audio. You will not get a notification in the transcription fails. (Sorry)</p>
       <input type=submit name=submit value=Upload disabled=disabled id=s3_submit>
     </form>
   </body>
