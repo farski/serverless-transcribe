@@ -449,7 +449,7 @@ Resources:
     Type: AWS::ApiGateway::Authorizer
     Properties:
       AuthorizerCredentials: !GetAtt StaticWebsiteAuthorizerIamRole.Arn
-      AuthorizerResultTtlInSeconds: 0
+      AuthorizerResultTtlInSeconds: 600
       AuthorizerUri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${StaticWebsiteAuthorizerFunction.Arn}/invocations
       IdentitySource: method.request.header.Authorization
       Name: !Sub ${AWS::StackName}_static_website_authorizer
