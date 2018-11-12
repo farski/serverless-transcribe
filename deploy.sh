@@ -21,7 +21,8 @@ aws cloudformation deploy \
         UploadAccessKeyId=$UPLOAD_ACCESS_KEY_ID \
         MediaBucketIdentifier=$MEDIA_BUCKET_IDENTIFIER \
         BasicAuthUsername=$BASIC_AUTH_USERNAME \
-        BasicAuthPassword=$BASIC_AUTH_PASSWORD
+        BasicAuthPassword=$BASIC_AUTH_PASSWORD \
+        NotificationSourceEmailAddress=$NOTIFICATION_SOURCE_EMAIL_ADDRESS
 
 print '\nWebpage URL:'
 aws cloudformation describe-stacks --stack-name $CLOUDFORMATION_STACK_NAME | grep "OutputValue" | sed 's/\"//g' | sed 's/ //g' | sed 's/,//g' | sed 's/OutputValue\://'

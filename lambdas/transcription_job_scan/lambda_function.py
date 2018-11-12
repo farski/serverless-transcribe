@@ -64,7 +64,7 @@ def lambda_handler(event, context):
         notification_email = media_metadata['email']
 
         ses.send_email(
-            Source='transcribe@bailey.dog',
+            Source=os.environ['NOTIFICATION_SOURCE_EMAIL_ADDRESS'],
             Destination={
                 'ToAddresses': [
                     notification_email

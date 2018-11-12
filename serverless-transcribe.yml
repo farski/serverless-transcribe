@@ -16,6 +16,8 @@ Parameters:
     Type: String
   BasicAuthPassword:
     Type: String
+  NotificationSourceEmailAddress:
+    Type: String
 Resources:
   TranscriptionsBucket:
     Type: AWS::S3::Bucket
@@ -183,6 +185,7 @@ Resources:
       Environment:
         Variables:
           TRANSCRIPTION_JOB_SCAN_QUEUE_URL: !Ref TranscriptionJobScanQueue
+          NOTIFICATION_SOURCE_EMAIL_ADDRESS: !Ref NotificationSourceEmailAddress
       Handler: lambda_function.lambda_handler
       MemorySize: 128
       Role: !GetAtt TranscriptionJobScanFunctionIamRole.Arn
