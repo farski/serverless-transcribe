@@ -22,8 +22,7 @@ def lambda_handler(event, context):
         LanguageCode='en-US',
         MediaFormat='mp3',
         Media={
-            # TODO Don't hard code the region
-            'MediaFileUri': f"https://s3-us-east-1.amazonaws.com/{bucket_name}/{object_key}"
+            'MediaFileUri': f"https://s3-{os.environ['AWS_REGION']}.amazonaws.com/{bucket_name}/{object_key}"
         },
         OutputBucketName=os.environ['TRANSCRIPTIONS_OUTPUT_BUCKET'],
     )
