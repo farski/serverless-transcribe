@@ -307,8 +307,8 @@ Resources:
     Properties:
       StageName: omega
       RestApiId: !Ref WebsiteApi
-      DeploymentId: !Ref WebsiteApiDeployment3
-  WebsiteApiDeployment3:
+      DeploymentId: !Ref WebsiteApiDeployment
+  WebsiteApiDeployment:
     DependsOn:
       - WebsiteApiBrowserBasedUploadMethod
       - StaticWebsiteMethod
