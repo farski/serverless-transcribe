@@ -22,3 +22,7 @@ aws cloudformation deploy \
         MediaBucketIdentifier=$MEDIA_BUCKET_IDENTIFIER \
         BasicAuthUsername=$BASIC_AUTH_USERNAME \
         BasicAuthPassword=$BASIC_AUTH_PASSWORD
+
+print '\nWebpage URL:'
+aws cloudformation describe-stacks --stack-name $CLOUDFORMATION_STACK_NAME | grep "OutputValue" | sed 's/\"//g' | sed 's/ //g' | sed 's/,//g' | sed 's/OutputValue\://'
+print '\n'
