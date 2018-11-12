@@ -6,13 +6,15 @@ A simple UI for [Amazon Transcribe](https://aws.amazon.com/transcribe/)
 
 Once the project has been launched in [CloudFormation](https://aws.amazon.com/cloudformation/), you will have access to a webpage that allows users to upload audio files. The page uploads the files directly to [S3](https://aws.amazon.com/s3/). The S3 bucket is configured to watch for audio files. When it sees new audio files, an [AWS Lambda](https://aws.amazon.com/lambda/) function is invoked, which starts a transcription job.
 
-Periodically, after each job has started, another Lambda function checks on the job's status. Once it sees that a job has completed, the raw transcript is extracted from the job results, and is emailed to the user to uploaded the file.
+Periodically, after each job has started, another Lambda function checks on the job's status. Once it sees that a job has completed, the raw transcript is extracted from the job results, and is emailed to the user who uploaded the file.
 
-The webpage is protected by HTTP Basic authentication, with a single set of credentials. This is handled by an authorizer on the [API Gateway](https://aws.amazon.com/api-gateway/), and could be extended to allow for more complicated authorization schemes.
+The webpage is protected by HTTP Basic authentication, with a single set of credentials that you set when launching the stack. This is handled by an authorizer on the [API Gateway](https://aws.amazon.com/api-gateway/), and could be extended to allow for more complicated authorization schemes.
+
+Amazon Transcribe currently has file limits of 2 hours and 1 GB.
 
 ### AWS Costs
 
-The cost of running and using this project are almost entirely based on usage. Media files uploaded to S3 are set to expire after 1 day, and the resulting files in the transcripts bucket expire after 30 days. The Lambda functions have no fixed costs, so you will only be charged when they are invoked. Amazon Transcribe is "[pay-as-you-go](https://aws.amazon.com/transcribe/pricing/) based on the seconds of audio transcribed per month".
+The cost of running and using this project are almost entirely based on usage. Media files uploaded to S3 are set to expire after one day, and the resulting files in the transcripts bucket expire after 30 days. The Lambda functions have no fixed costs, so you will only be charged when they are invoked. Amazon Transcribe is "[pay-as-you-go](https://aws.amazon.com/transcribe/pricing/) based on the seconds of audio transcribed per month".
 
 One Lambda function has an [SQS](https://aws.amazon.com/sqs/) event source, which uses long polling to watch for messages. The function is only called when messages are availabe in the queue, but the polling will generate API calls to SQS on a fairly continous basis. Please see the end of this [blog post](https://aws.amazon.com/blogs/aws/aws-lambda-adds-amazon-simple-queue-service-to-supported-event-sources/) for more information.
 
@@ -43,6 +45,6 @@ The deploy script will put files in the correct place in S3. If you chose to lau
 
 The `UPLOAD_ACCESS_KEY` ID and secret are used to sign the upload requests the webpage makes to S3. The access key you provide must have the ability to do that.
 
-Once the deploy script has finished running, it will print the URL for the upload webpage. You should be able to visit that page, enter the HTTP basic auth credentials you set, and upload
+Once the deploy script has finished running, it will print the URL for the upload webpage. You should be able to visit that page, enter the HTTP basic auth credentials you set, and upload a file for transcription.
 
-Currently the deploy script will not push Lambda code changes to the deployed functions. The code will be pushed to S3, but CloudFormation will not update the function from the newer zip file.
+Currently the deploy script will not push Lambda code changes to the deployed functions. The code will be pushed to S3, but CloudFormation will not update the function from the newer zip file. (WIP)
