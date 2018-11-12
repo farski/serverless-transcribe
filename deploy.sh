@@ -19,4 +19,6 @@ aws cloudformation deploy \
         StackResourcesPrefix=$CLOUDFORMATION_STACK_NAME \
         UploadSecretAccessKey=$UPLOAD_SECRET_ACCESS_KEY \
         UploadAccessKeyId=$UPLOAD_ACCESS_KEY_ID \
-        MediaBucketIdentifier=$MEDIA_BUCKET_IDENTIFIER
+        MediaBucketIdentifier=$MEDIA_BUCKET_IDENTIFIER \
+        BasicAuthUsername=$BASIC_AUTH_USERNAME \
+        BasicAuthPassword=$BASIC_AUTH_PASSWORD

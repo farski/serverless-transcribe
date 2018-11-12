@@ -12,6 +12,10 @@ Parameters:
     Type: String
   StackResourcesPrefix:
     Type: String
+  BasicAuthUsername:
+    Type: String
+  BasicAuthPassword:
+    Type: String
 Resources:
   TranscriptionsBucket:
     Type: AWS::S3::Bucket
@@ -303,13 +307,22 @@ Resources:
     Properties:
       StageName: omega
       RestApiId: !Ref WebsiteApi
-      DeploymentId: !Ref WebsiteApiDeployment
-  WebsiteApiDeployment:
+      DeploymentId: !Ref WebsiteApiDeployment3
+  WebsiteApiDeployment3:
     DependsOn:
       - WebsiteApiBrowserBasedUploadMethod
+      - StaticWebsiteMethod
     Type: AWS::ApiGateway::Deployment
     Properties:
       RestApiId: !Ref WebsiteApi
+  WebsiteApiUnauthorizedGatewayReponse:
+    Type: AWS::ApiGateway::GatewayResponse
+    Properties:
+      ResponseParameters:
+        gatewayresponse.header.WWW-Authenticate: "'Basic'"
+      ResponseType: UNAUTHORIZED
+      RestApiId: !Ref WebsiteApi
+      StatusCode: "401"
   WebsiteApiV1Resource:
     Type: AWS::ApiGateway::Resource
     Properties:
@@ -348,13 +361,7 @@ Resources:
         S3Bucket: !Ref StackResourcesBucket
         S3Key: !Sub "${StackResourcesPrefix}/lambdas/static_website.zip"
       Description: >
-        Provides a simple API for browser-based S3 uploading
-      # Environment:
-      #   Variables:
-      #     MEDIA_BUCKET: !Ref MediaBucket
-      #     MEDIA_BUCKET_DOMAIN_NAME: !GetAtt MediaBucket.RegionalDomainName
-      #     UPLOAD_ACCESS_KEY_ID: !Ref UploadAccessKeyId
-      #     UPLOAD_SECRET_ACCESS_KEY: !Ref UploadSecretAccessKey
+        Generates a basic front end for uploading files to S3
       Handler: lambda_function.lambda_handler
       MemorySize: 128
       Role: !GetAtt StaticWebsiteFunctionIamRole.Arn
@@ -387,14 +394,15 @@ Resources:
   StaticWebsiteMethod:
     Type: AWS::ApiGateway::Method
     Properties:
-      RestApiId: !Ref WebsiteApi
-      ResourceId: !Ref StaticWebsiteResource
+      AuthorizationType: CUSTOM
+      AuthorizerId: !Ref StaticWebsiteAuthorizer
       HttpMethod: GET
-      AuthorizationType: NONE
       Integration:
         Type: AWS_PROXY
         IntegrationHttpMethod: POST
         Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${StaticWebsiteFunction.Arn}/invocations
+      ResourceId: !Ref StaticWebsiteResource
+      RestApiId: !Ref WebsiteApi
   StaticWebsiteMethodInvokeFunctionPermission:
     Type: AWS::Lambda::Permission
     Properties:
@@ -402,3 +410,73 @@ Resources:
       FunctionName: !Ref StaticWebsiteFunction
       Principal: apigateway.amazonaws.com
       SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${WebsiteApi}/${WebsiteApiStage}/*"
+  StaticWebsiteAuthorizerFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket: !Ref StackResourcesBucket
+        S3Key: !Sub "${StackResourcesPrefix}/lambdas/static_website_authorizer.zip"
+      Description: >
+        Authorizer for S3 file upload front end
+      Environment:
+        Variables:
+          BASIC_AUTH_USERNAME: !Ref BasicAuthUsername
+          BASIC_AUTH_PASSWORD: !Ref BasicAuthPassword
+      Handler: lambda_function.lambda_handler
+      MemorySize: 128
+      Role: !GetAtt StaticWebsiteAuthorizerFunctionIamRole.Arn
+      Runtime: python3.6
+      Tags:
+        - Key: Project
+          Value: serverless-transcribe
+      Timeout: 3
+  StaticWebsiteAuthorizerFunctionIamRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: "/"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+  StaticWebsiteAuthorizer:
+    Type: AWS::ApiGateway::Authorizer
+    Properties:
+      AuthorizerCredentials: !GetAtt StaticWebsiteAuthorizerIamRole.Arn
+      AuthorizerResultTtlInSeconds: 0
+      AuthorizerUri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${StaticWebsiteAuthorizerFunction.Arn}/invocations
+      IdentitySource: method.request.header.Authorization
+      Name: !Sub ${AWS::StackName}_static_website_authorizer
+      RestApiId: !Ref WebsiteApi
+      Type: REQUEST
+  StaticWebsiteAuthorizerIamRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - apigateway.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: "/"
+      Policies:
+        - PolicyName: AuthorizerLambdaInvoke
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - lambda:invokeFunction
+                Resource:
+                  - !GetAtt StaticWebsiteAuthorizerFunction.Arn
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
