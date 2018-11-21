@@ -3,8 +3,62 @@
   <head>
     <meta charset=utf-8 />
     <title>Transcription</title>
-  </head>
-  <body style="margin: 100px auto 0; width: 75%;">
+    <style>
+      body {
+        background: #fcfcfc;
+        border: 0;
+        font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+        margin: 0;
+        padding: 0;
+      }
+
+      form {
+        margin: 0 auto;
+        max-width: 500px;
+        width: 75%;
+      }
+
+      fieldset {
+        background: #f0f0f0;
+        border: 0;
+        margin: 100px 0 0 0;
+        padding: 40px;
+      }
+
+      fieldset legend {
+        font-size: 32px;
+      }
+
+      fieldset small {
+        color: #222;
+        display: block;
+        padding: 6px;
+      }
+
+      fieldset label {
+        font-size: 18px;
+        color: #222;
+        display: inline-block;
+        margin: 50px 0 0 0;
+        width: 70px;
+      }
+      fieldset label:first-of-type { margin: 0; }
+
+      fieldset input[type='text'] {
+        font-size: 24px;
+        padding: 8px;
+      }
+
+      input[type='submit'] {
+        background: #e9e9e9;
+        border: 0;
+        border-radius: 5px;
+        display: block;
+        font-size: 24px;
+        margin: 40px auto 0;
+        padding: 10px 15px;
+      }
+    </style>
     <script>
       function getStuff() {
         return new Promise((resolve, reject) => {
@@ -67,7 +121,8 @@
         validate();
       })();
     </script>
-
+  </head>
+  <body>
     <!-- https://docs.aws.amazon.com/AmazonS3/latest/API/sigv4-HTTPPOSTForms.html -->
     <form id=s3_upload method=post enctype=multipart/form-data>
       <input type=hidden name=Content-Type id=s3_object_content_type>
@@ -80,16 +135,16 @@
       <input type=hidden name=x-amz-signature id=s3_amz_signature>
 
       <fieldset>
+        <legend>Transcription Details:</legend>
         <label for=s3_amz_meta_email>Email</label>
-        <input name=x-amz-meta-email id=s3_amz_meta_email>
-        <p>The transcript will be emailed to this address</p>
-      </fieldset>
+        <input name=x-amz-meta-email id=s3_amz_meta_email type=text placeholder=alice@example.com>
+        <small>The transcript will be emailed to this address</small>
 
-      <!-- Any POST data after the `file` field is ignored by S3 -->
-      <fieldset>
         <label for=s3_file>File</label>
+        <!-- Any POST data after the `file` field is ignored by S3 -->
         <input type=file name=file id=s3_file accept=".mp3,.mp4,.m4a,.wav">
-        <p>Supports: MP3, MP4, and WAV. Limits: 2 hours, 1 GB</p>
+        <small>Supports: MP3, MP4, and WAV</small>
+        <small>Limits: 2 hours, 1 GB</small>
       </fieldset>
 
       <p>Once the upload completes, the file will be processed in the cloud. You will receive an email with the transcript once it is complete. This can take some time, depending on the length of the audio. You will not get a notification in the transcription fails. (Sorry)</p>
