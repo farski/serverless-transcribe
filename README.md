@@ -18,7 +18,7 @@ The cost of running and using this project are almost entirely based on usage. M
 
 One Lambda function has an [SQS](https://aws.amazon.com/sqs/) event source, which uses long polling to watch for messages. The function is only called when messages are availabe in the queue, but the polling will generate API calls to SQS on a fairly continous basis. Please see the end of this [blog post](https://aws.amazon.com/blogs/aws/aws-lambda-adds-amazon-simple-queue-service-to-supported-event-sources/) for more information.
 
-Note: My experience has been that when the Lambda service is long polling an empty queue, it usually generates about 75 requests per 5 minutes, or just over 21,500 requests per day. Ignoring the 1,000,000 monthly free requests that all AWS accounts get in perpituity, that is a daily cost of about $0.0086 per day, or 26 cents per month.
+> **Please note:** My experience has been that when the Lambda service is long polling an empty queue, it usually generates about 75 requests per 5 minutes, or just over 21,500 requests per day. Ignoring the 1,000,000 monthly free requests that all AWS accounts get in perpituity, that is a daily cost of about $0.0086 per day, or 26 cents per month.
 
 Most resources created from the CloudFormation template include a `Project` resource tag, which you can use for cost allocation. Unfortunately Amazon Transcribe jobs cannot be tracked this way.
 
