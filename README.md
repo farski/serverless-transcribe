@@ -16,7 +16,9 @@ Amazon Transcribe currently has file limits of 2 hours and 1 GB.
 
 The cost of running and using this project are almost entirely based on usage. Media files uploaded to S3 are set to expire after one day, and the resulting files in the transcripts bucket expire after 30 days. The Lambda functions have no fixed costs, so you will only be charged when they are invoked. Amazon Transcribe is "[pay-as-you-go](https://aws.amazon.com/transcribe/pricing/) based on the seconds of audio transcribed per month".
 
-One Lambda function has an [SQS](https://aws.amazon.com/sqs/) event source, which uses long polling to watch for messages. The function is only called when messages are availabe in the queue, but the polling will generate API calls to SQS on a fairly continous basis. Please see the end of this [blog post](https://aws.amazon.com/blogs/aws/aws-lambda-adds-amazon-simple-queue-service-to-supported-event-sources/) for more information. (At 1 request per second, or roughly 2.8 million requests per month, the cost would be about $1 per month. Long polling will not generate nearly that many requests.)
+One Lambda function has an [SQS](https://aws.amazon.com/sqs/) event source, which uses long polling to watch for messages. The function is only called when messages are availabe in the queue, but the polling will generate API calls to SQS on a fairly continous basis. Please see the end of this [blog post](https://aws.amazon.com/blogs/aws/aws-lambda-adds-amazon-simple-queue-service-to-supported-event-sources/) for more information.
+
+Note: My experience has been that when the Lambda service is long polling an empty queue, it usually generates about 75 requests per 5 minutes, or just over 21,500 requests per day. Ignoring the 1,000,000 monthly free requests that all AWS accounts get in perpituity, that is a daily cost of about $0.0086 per day, or 26 cents per month.
 
 Most resources created from the CloudFormation template include a `Project` resource tag, which you can use for cost allocation. Unfortunately Amazon Transcribe jobs cannot be tracked this way.
 
