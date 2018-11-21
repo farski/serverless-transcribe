@@ -12,6 +12,12 @@
         padding: 0;
       }
 
+      #upload_notification {
+        color: #00753F;
+        visibility: hidden;
+        text-align: center;
+      }
+
       form {
         margin: 0 auto;
         max-width: 500px;
@@ -90,39 +96,44 @@
         document.addEventListener("DOMContentLoaded", _ => {
           document.getElementById('s3_success_action_redirect').value = window.location.href;
 
+          if (window.location.href.includes('etag=')) {
+            document.getElementById('upload_notification').style.visibility = 'visible';
+          }
+
           const file_selector = document.getElementById('s3_file');
           file_selector.addEventListener('change', ev => {
-            const file = file_selector.files[0]
+          const file = file_selector.files[0];
 
-            document.getElementById('s3_object_content_type').value = file.type;
-            document.getElementById('s3_object_key').value = `audio/${+(new Date)}_${file.name}`;
+          document.getElementById('s3_object_content_type').value = file.type;
+          document.getElementById('s3_object_key').value = `audio/${+(new Date)}_${file.name}`;
 
-            validate();
-          });
-
-          const email_field = document.getElementById('s3_amz_meta_email');
-          email_field.addEventListener('keydown', ev => {
-            validate();
-          });
+          validate();
         });
-      })();
 
-      (async function () {
-        const stuff = await getStuff();
+        const email_field = document.getElementById('s3_amz_meta_email');
+        email_field.addEventListener('keydown', ev => {
+          validate();
+        });
+      });
+    })();
 
-        document.getElementById('s3_upload').setAttribute('action', `https://${stuff.bucket_domain_name}`);
+    (async function () {
+      const stuff = await getStuff();
 
-        document.getElementById('s3_policy').value = stuff.base64_policy;
-        document.getElementById('s3_amz_algorithm').value = stuff.amz_algorithm;
-        document.getElementById('s3_amz_credential').value = stuff.amz_credential;
-        document.getElementById('s3_amz_date').value = stuff.amz_date;
-        document.getElementById('s3_amz_signature').value = stuff.signature;
+      document.getElementById('s3_upload').setAttribute('action', `https://${stuff.bucket_domain_name}`);
 
-        validate();
-      })();
+      document.getElementById('s3_policy').value = stuff.base64_policy;
+      document.getElementById('s3_amz_algorithm').value = stuff.amz_algorithm;
+      document.getElementById('s3_amz_credential').value = stuff.amz_credential;
+      document.getElementById('s3_amz_date').value = stuff.amz_date;
+      document.getElementById('s3_amz_signature').value = stuff.signature;
+
+      validate();
+    })();
     </script>
   </head>
   <body>
+    <h3 id=upload_notification>Upload Complete</h3>
     <!-- https://docs.aws.amazon.com/AmazonS3/latest/API/sigv4-HTTPPOSTForms.html -->
     <form id=s3_upload method=post enctype=multipart/form-data>
       <input type=hidden name=Content-Type id=s3_object_content_type>
