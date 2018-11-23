@@ -1,4 +1,4 @@
-#!/bin/zsh
+#!/bin/bash
 set -e
 
 source ./.env
@@ -24,6 +24,5 @@ aws cloudformation deploy \
         BasicAuthPassword=$BASIC_AUTH_PASSWORD \
         NotificationSourceEmailAddress=$NOTIFICATION_SOURCE_EMAIL_ADDRESS
 
-print '\nWebpage URL:'
+echo 'Webpage URL:'
 aws cloudformation describe-stacks --stack-name $CLOUDFORMATION_STACK_NAME | grep "OutputValue" | sed 's/\"//g' | sed 's/ //g' | sed 's/,//g' | sed 's/OutputValue\://'
-print '\n'
