@@ -28,7 +28,7 @@ The project is organized using a CloudFormation [template](https://github.com/fa
 
 ### Requirements
 
-- The stack must be launched in an AWS region that supports [SES](https://aws.amazon.com/ses/). There aren't many of these, unfortunately. The addresses that SES will send to and from are determined by your SES domain verification and sandboxing status.
+- The stack must be launched in an AWS region that supports [SES](https://aws.amazon.com/ses/). There aren't [many of these](https://docs.aws.amazon.com/ses/latest/DeveloperGuide/regions.html), unfortunately. The addresses that SES will send to and from are determined by your SES domain verification and sandboxing status.
 - There must be a pre-existing S3 bucket where resources (like Lambda function code) needed to launch the stack can be found. This can be any bucket that CloudFormation will have read access to when launching the stack (based on the role used to execute the launch).
 
 ### Using the Deploy Script
