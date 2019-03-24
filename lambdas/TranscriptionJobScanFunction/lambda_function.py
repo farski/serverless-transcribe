@@ -44,6 +44,10 @@ def get_transcript_data(transcription_job_name):
 
 
 def lambda_handler(event, context):
+    # `record` is the SQS message enqueued by the JobStart function.
+    # The message body is the the transcription job name, and the message
+    # attributes include the bucket name and object key for the object that
+    # triggered the job.
     record = event['Records'][0]
 
     message_attributes = record['messageAttributes']
@@ -56,12 +60,17 @@ def lambda_handler(event, context):
     if transcription_job_data is not None:
         # If the job is complete, fetch the email to where the the transcript
         # should be sent, and send the email
+        print(f"Transcription job complete: {transcription_job_name}")
+
         transcripts = transcription_job_data['results']['transcripts']
         transcript = transcripts[0]['transcript']
 
+        # The notification email was set as metadata on the object when it was
+        # first created (x-amz-meta-email)
         media_metadata = get_s3_metadata(media_bucket_name, media_object_key)
-        print(media_metadata)
         notification_email = media_metadata['email']
+
+        print(f"Sending notification to {notification_email}")
 
         ses.send_email(
             Source=os.environ['NOTIFICATION_SOURCE_EMAIL_ADDRESS'],

@@ -29,7 +29,7 @@ The project is organized using a CloudFormation [template](https://github.com/fa
 ### Requirements
 
 - The stack must be launched in an AWS region that supports [SES](https://aws.amazon.com/ses/). There aren't many of these, unfortunately. The addresses that SES will send to and from are determined by your SES domain verification and sandboxing status.
-- There must be a pre-existing S3 bucket where resources (like Lambda function code) needed to launch the stack can be found. This can be any bucket that CloudFormation will have read access to when launching the stack (based on the role used to execute the launch).
+- There must be a pre-existing S3 bucket where resources (like Lambda function code) needed to launch the stack can be found. This can be any bucket that CloudFormation will have read access to when launching the stack (based on the role used to execute the launch). The bucket must have object versioning enabled.
 
 ### Using the Deploy Script
 
@@ -40,7 +40,7 @@ The deploy script will zip all the files in the `lambdas/` directory, and push t
 **Please note** that the template expects Lambda function code zip files' object keys to be prefixed with the stack's name. For example, if your `STACK_RESOURCES_BUCKET=my_code_bucket`, and you name the stack `my_transcription_app`, CloudFormation will look for a file such as:
 
 ```
-s3://my_code_bucket/my_transcription_app/lambdas/transcription_job_scan.zip
+s3://my_code_bucket/my_transcription_app/lambdas/TranscriptionJobStartFunction.zip
 ```
 
 The deploy script will put files in the correct place in S3. If you chose to launch the stack through the Console you will need to create the zip files yourself, and ensure they end up in the correct bucket with the correct prefix.
@@ -48,5 +48,3 @@ The deploy script will put files in the correct place in S3. If you chose to lau
 The `UPLOAD_ACCESS_KEY` ID and secret are used to sign the upload requests the webpage makes to S3. The access key you provide must have the ability to do that.
 
 Once the deploy script has finished running, it will print the URL for the upload webpage. You should be able to visit that page, enter the HTTP basic auth credentials you set, and upload a file for transcription.
-
-Currently the deploy script will not push Lambda code changes to the deployed functions. The code will be pushed to S3, but CloudFormation will not update the function from the newer zip file. (WIP)

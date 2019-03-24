@@ -18,6 +18,17 @@ Parameters:
     Type: String
   NotificationSourceEmailAddress:
     Type: String
+  # S3 Object Verion Parameters
+  TranscriptionJobStartFunctionS3ObjectVersion:
+    Type: String
+  TranscriptionJobScanFunctionS3ObjectVersion:
+    Type: String
+  WebsiteApiFunctionS3ObjectVersion:
+    Type: String
+  StaticWebsiteFunctionS3ObjectVersion:
+    Type: String
+  StaticWebsiteAuthorizerFunctionS3ObjectVersion:
+    Type: String
 Resources:
   TranscriptionsBucket:
     Type: AWS::S3::Bucket
@@ -36,7 +47,7 @@ Resources:
       CorsConfiguration:
         CorsRules:
           - AllowedHeaders:
-               - "*"
+              - "*"
             AllowedMethods:
               - "POST"
             AllowedOrigins:
@@ -91,11 +102,13 @@ Resources:
     Properties:
       Code:
         S3Bucket: !Ref StackResourcesBucket
-        S3Key: !Sub "${StackResourcesPrefix}/lambdas/transcription_job_start.zip"
+        S3Key: !Sub "${StackResourcesPrefix}/lambdas/TranscriptionJobStartFunction.zip"
+        S3ObjectVersion: !Ref TranscriptionJobStartFunctionS3ObjectVersion
       Description: >
         Starts transcription jobs when triggered by S3 events
       Environment:
         Variables:
+          NOTIFICATION_SOURCE_EMAIL_ADDRESS: !Ref NotificationSourceEmailAddress
           TRANSCRIPTIONS_OUTPUT_BUCKET: !Ref TranscriptionsBucket
           TRANSCRIPTION_JOB_SCAN_QUEUE_URL: !Ref TranscriptionJobScanQueue
       Handler: lambda_function.lambda_handler
@@ -163,6 +176,15 @@ Resources:
                   - sqs:SendMessage
                 Resource:
                   - !GetAtt TranscriptionJobScanQueue.Arn
+        - PolicyName: SESSendEmail
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ses:SendEmail
+                Resource:
+                  - "*"
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
   # Transcription Job Scan
@@ -179,7 +201,8 @@ Resources:
     Properties:
       Code:
         S3Bucket: !Ref StackResourcesBucket
-        S3Key: !Sub "${StackResourcesPrefix}/lambdas/transcription_job_scan.zip"
+        S3Key: !Sub "${StackResourcesPrefix}/lambdas/TranscriptionJobScanFunction.zip"
+        S3ObjectVersion: !Ref TranscriptionJobScanFunctionS3ObjectVersion
       Description: >
         Checks on transcription jobs
       Environment:
@@ -268,7 +291,8 @@ Resources:
     Properties:
       Code:
         S3Bucket: !Ref StackResourcesBucket
-        S3Key: !Sub "${StackResourcesPrefix}/lambdas/website_api.zip"
+        S3Key: !Sub "${StackResourcesPrefix}/lambdas/WebsiteApiFunction.zip"
+        S3ObjectVersion: !Ref WebsiteApiFunctionS3ObjectVersion
       Description: >
         Provides a simple API for browser-based S3 uploading
       Environment:
@@ -362,7 +386,8 @@ Resources:
     Properties:
       Code:
         S3Bucket: !Ref StackResourcesBucket
-        S3Key: !Sub "${StackResourcesPrefix}/lambdas/static_website.zip"
+        S3Key: !Sub "${StackResourcesPrefix}/lambdas/StaticWebsiteFunction.zip"
+        S3ObjectVersion: !Ref StaticWebsiteFunctionS3ObjectVersion
       Description: >
         Generates a basic front end for uploading files to S3
       Handler: lambda_function.lambda_handler
@@ -418,7 +443,8 @@ Resources:
     Properties:
       Code:
         S3Bucket: !Ref StackResourcesBucket
-        S3Key: !Sub "${StackResourcesPrefix}/lambdas/static_website_authorizer.zip"
+        S3Key: !Sub "${StackResourcesPrefix}/lambdas/StaticWebsiteAuthorizerFunction.zip"
+        S3ObjectVersion: !Ref StaticWebsiteAuthorizerFunctionS3ObjectVersion
       Description: >
         Authorizer for S3 file upload front end
       Environment:
