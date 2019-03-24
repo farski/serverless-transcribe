@@ -118,7 +118,7 @@ Resources:
       Tags:
         - Key: Project
           Value: serverless-transcribe
-      Timeout: 3
+      Timeout: 8
   TranscriptionJobStartFunctionIamRole:
     Type: AWS::IAM::Role
     Properties:
