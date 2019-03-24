@@ -48,6 +48,10 @@ def lambda_handler(event, context):
         Media={
             'MediaFileUri': f"https://{s3_host}/{bucket_name}/{object_key}"
         },
+        # Settings={
+        #     'MaxSpeakerLabels': 5,
+        #     'ShowSpeakerLabels': True
+        # },
         OutputBucketName=os.environ['TRANSCRIPTIONS_OUTPUT_BUCKET'],
     )
 
