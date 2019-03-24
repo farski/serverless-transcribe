@@ -6,7 +6,7 @@ A simple UI for [Amazon Transcribe](https://aws.amazon.com/transcribe/)
 
 Once the project has been launched in [CloudFormation](https://aws.amazon.com/cloudformation/), you will have access to a webpage that allows users to upload audio files. The page uploads the files directly to [S3](https://aws.amazon.com/s3/). The S3 bucket is configured to watch for audio files. When it sees new audio files, an [AWS Lambda](https://aws.amazon.com/lambda/) function is invoked, which starts a transcription job.
 
-Periodically, after each job has started, another Lambda function checks on the job's status. Once it sees that a job has completed, the raw transcript is extracted from the job results, and is emailed to the user who uploaded the file.
+Another Lambda function is triggered via [CloudWatch Events](https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/WhatIsCloudWatchEvents.html) when the transcription job completes (or fails). An email is sent to the user who uploaded file with details about the job failure, or a raw transcript that is extracted from the job results.
 
 The webpage is protected by HTTP Basic authentication, with a single set of credentials that you set when launching the stack. This is handled by an authorizer on the [API Gateway](https://aws.amazon.com/api-gateway/), and could be extended to allow for more complicated authorization schemes.
 
@@ -15,10 +15,6 @@ Amazon Transcribe currently has file limits of 2 hours and 1 GB.
 ### AWS Costs
 
 The cost of running and using this project are almost entirely based on usage. Media files uploaded to S3 are set to expire after one day, and the resulting files in the transcripts bucket expire after 30 days. The Lambda functions have no fixed costs, so you will only be charged when they are invoked. Amazon Transcribe is "[pay-as-you-go](https://aws.amazon.com/transcribe/pricing/) based on the seconds of audio transcribed per month".
-
-One Lambda function has an [SQS](https://aws.amazon.com/sqs/) event source, which uses long polling to watch for messages. The function is only called when messages are availabe in the queue, but the polling will generate API calls to SQS on a fairly continous basis. Please see the end of this [blog post](https://aws.amazon.com/blogs/aws/aws-lambda-adds-amazon-simple-queue-service-to-supported-event-sources/) for more information.
-
-> **Please note:** My experience has been that when the Lambda service is long polling an empty queue, it usually generates about 75 requests per 5 minutes, or just over 21,500 requests per day. Ignoring the 1,000,000 monthly free requests that all AWS accounts get in perpituity, that is a daily cost of about $0.0086 per day, or 26 cents per month.
 
 Most resources created from the CloudFormation template include a `Project` resource tag, which you can use for cost allocation. Unfortunately Amazon Transcribe jobs cannot be tracked this way.
 

@@ -1,3 +1,8 @@
+# This function is triggered by API Gateway as an authorizer. It uses the HTTP
+# basic auth Authorization header to permit access to API Gateway methods by
+# returning a policy document when the credentials match those defined as stack
+# parameters.
+
 import os
 import base64
 

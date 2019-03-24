@@ -41,10 +41,10 @@ aws cloudformation deploy \
                 BasicAuthPassword=$BASIC_AUTH_PASSWORD \
                 NotificationSourceEmailAddress=$NOTIFICATION_SOURCE_EMAIL_ADDRESS \
                 TranscriptionJobStartFunctionS3ObjectVersion=$TranscriptionJobStartFunctionS3ObjectVersion \
-                TranscriptionJobScanFunctionS3ObjectVersion=$TranscriptionJobScanFunctionS3ObjectVersion \
                 WebsiteApiFunctionS3ObjectVersion=$WebsiteApiFunctionS3ObjectVersion \
                 StaticWebsiteFunctionS3ObjectVersion=$StaticWebsiteFunctionS3ObjectVersion \
-                StaticWebsiteAuthorizerFunctionS3ObjectVersion=$StaticWebsiteAuthorizerFunctionS3ObjectVersion
+                StaticWebsiteAuthorizerFunctionS3ObjectVersion=$StaticWebsiteAuthorizerFunctionS3ObjectVersion \
+                TranscriptionJobStateChangeFunctionS3ObjectVersion=$TranscriptionJobStateChangeFunctionS3ObjectVersion
 
 print '\nWebpage URL:'
 aws cloudformation describe-stacks --stack-name $CLOUDFORMATION_STACK_NAME | grep "OutputValue" | sed 's/\"//g' | sed 's/ //g' | sed 's/,//g' | sed 's/OutputValue\://'

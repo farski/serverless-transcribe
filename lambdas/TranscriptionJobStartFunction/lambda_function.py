@@ -1,17 +1,30 @@
 # This function is triggered by an S3 event when an object is created. It
-# starts a transcription job with the media file, and sends a message about the
-# job to an SQS queue.
+# starts a transcription job with the media file, and sends an email notifying
+# the user that the job has started.
 
 import boto3
 import uuid
 import os
+import re
 
 s3 = boto3.client('s3')
 ses = boto3.client('ses')
-sqs = boto3.client('sqs')
 transcribe = boto3.client('transcribe')
 
 s3_host = f"s3-{os.environ['AWS_REGION']}.amazonaws.com"
+
+
+def get_media_format(path):
+    if re.search('.mp3$', path) is not None:
+        return 'mp3'
+    elif re.search('.mp4$', path) is not None:
+        return 'mp4'
+    elif re.search('.m4a$', path) is not None:
+        return 'mp4'
+    elif re.search('.wav$', path) is not None:
+        return 'wav'
+    else:
+        return 'mp3'
 
 
 def get_s3_metadata(bucket, key):
@@ -31,26 +44,11 @@ def lambda_handler(event, context):
     transcribe.start_transcription_job(
         TranscriptionJobName=f"{transcription_job_name}",
         LanguageCode='en-US',
-        MediaFormat='mp3',
+        MediaFormat=get_media_format(object_key),
         Media={
             'MediaFileUri': f"https://{s3_host}/{bucket_name}/{object_key}"
         },
         OutputBucketName=os.environ['TRANSCRIPTIONS_OUTPUT_BUCKET'],
-    )
-
-    sqs.send_message(
-        QueueUrl=os.environ['TRANSCRIPTION_JOB_SCAN_QUEUE_URL'],
-        MessageBody=f"{transcription_job_name}",
-        MessageAttributes={
-            'MediaBucketName': {
-                'DataType': 'String',
-                'StringValue': bucket_name
-            },
-            'MediaObjectKey': {
-                'DataType': 'String',
-                'StringValue': object_key
-            }
-        }
     )
 
     media_metadata = get_s3_metadata(bucket_name, object_key)

@@ -21,17 +21,18 @@ Parameters:
   # S3 Object Verion Parameters
   TranscriptionJobStartFunctionS3ObjectVersion:
     Type: String
-  TranscriptionJobScanFunctionS3ObjectVersion:
-    Type: String
   WebsiteApiFunctionS3ObjectVersion:
     Type: String
   StaticWebsiteFunctionS3ObjectVersion:
     Type: String
   StaticWebsiteAuthorizerFunctionS3ObjectVersion:
     Type: String
+  TranscriptionJobStateChangeFunctionS3ObjectVersion:
+    Type: String
 Resources:
   TranscriptionsBucket:
     Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
     Properties:
       LifecycleConfiguration:
         Rules:
@@ -42,6 +43,7 @@ Resources:
           Value: serverless-transcribe
   MediaBucket:
     Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
     Properties:
       BucketName: !Sub "${AWS::StackName}-${MediaBucketIdentifier}"
       CorsConfiguration:
@@ -96,6 +98,7 @@ Resources:
       Action: lambda:InvokeFunction
       FunctionName: !GetAtt TranscriptionJobStartFunction.Arn
       Principal: s3.amazonaws.com
+      # SourceArn: !GetAtt MediaBucket.Arn
       SourceArn: !Sub "arn:aws:s3:::${AWS::StackName}-${MediaBucketIdentifier}"
   TranscriptionJobStartFunction:
     Type: AWS::Lambda::Function
@@ -110,7 +113,6 @@ Resources:
         Variables:
           NOTIFICATION_SOURCE_EMAIL_ADDRESS: !Ref NotificationSourceEmailAddress
           TRANSCRIPTIONS_OUTPUT_BUCKET: !Ref TranscriptionsBucket
-          TRANSCRIPTION_JOB_SCAN_QUEUE_URL: !Ref TranscriptionJobScanQueue
       Handler: lambda_function.lambda_handler
       MemorySize: 128
       Role: !GetAtt TranscriptionJobStartFunctionIamRole.Arn
@@ -141,7 +143,6 @@ Resources:
                 Action:
                   - s3:ListBucket
                   - s3:GetObject
-                  - s3:PutObjectTagging
                 Resource:
                   - !Sub "arn:aws:s3:::${AWS::StackName}-${MediaBucketIdentifier}"
                   - !Sub "arn:aws:s3:::${AWS::StackName}-${MediaBucketIdentifier}/*"
@@ -167,15 +168,6 @@ Resources:
                   - transcribe:StartTranscriptionJob
                 Resource:
                   - "*"
-        - PolicyName: SQSSendMessage
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Effect: Allow
-                Action:
-                  - sqs:SendMessage
-                Resource:
-                  - !GetAtt TranscriptionJobScanQueue.Arn
         - PolicyName: SESSendEmail
           PolicyDocument:
             Version: "2012-10-17"
@@ -187,37 +179,28 @@ Resources:
                   - "*"
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-  # Transcription Job Scan
-  TranscriptionJobScanQueue:
-    Type: AWS::SQS::Queue
-    Properties:
-      DelaySeconds: 300
-      Tags:
-        - Key: Project
-          Value: serverless-transcribe
-      VisibilityTimeout: 300
-  TranscriptionJobScanFunction:
+  # Transcription Job Events
+  TranscriptionJobStateChangeFunction:
     Type: AWS::Lambda::Function
     Properties:
       Code:
         S3Bucket: !Ref StackResourcesBucket
-        S3Key: !Sub "${StackResourcesPrefix}/lambdas/TranscriptionJobScanFunction.zip"
-        S3ObjectVersion: !Ref TranscriptionJobScanFunctionS3ObjectVersion
-      Description: >
-        Checks on transcription jobs
+        S3Key: !Sub "${StackResourcesPrefix}/lambdas/TranscriptionJobStateChangeFunction.zip"
+        S3ObjectVersion: !Ref TranscriptionJobStateChangeFunctionS3ObjectVersion
+      Description: Handles transcription job state change events
       Environment:
         Variables:
-          TRANSCRIPTION_JOB_SCAN_QUEUE_URL: !Ref TranscriptionJobScanQueue
+          MEDIA_BUCKET_NAME: !Ref MediaBucket
           NOTIFICATION_SOURCE_EMAIL_ADDRESS: !Ref NotificationSourceEmailAddress
       Handler: lambda_function.lambda_handler
       MemorySize: 128
-      Role: !GetAtt TranscriptionJobScanFunctionIamRole.Arn
+      Role: !GetAtt TranscriptionJobStateChangeFunctionIamRole.Arn
       Runtime: python3.6
       Tags:
         - Key: Project
           Value: serverless-transcribe
       Timeout: 16
-  TranscriptionJobScanFunctionIamRole:
+  TranscriptionJobStateChangeFunctionIamRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -240,7 +223,7 @@ Resources:
                   - s3:GetObject
                 Resource:
                   - !Sub "${MediaBucket.Arn}/*"
-        - PolicyName: TranscriptionsBucketWriteAccess
+        - PolicyName: TranscriptionsBucketReadAccess
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
@@ -267,24 +250,38 @@ Resources:
                   - ses:SendEmail
                 Resource:
                   - "*"
-        - PolicyName: SQSSendMessage
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Effect: Allow
-                Action:
-                  - sqs:SendMessage
-                Resource:
-                  - !GetAtt TranscriptionJobScanQueue.Arn
       ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaSQSQueueExecutionRole
-  TranscriptionJobScanEventSourceMapping:
-    Type: AWS::Lambda::EventSourceMapping
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+  TranscriptionJobEventsRuleLambdaPermission:
+    Type: AWS::Lambda::Permission
     Properties:
-      BatchSize: 1
-      Enabled: true
-      EventSourceArn: !GetAtt TranscriptionJobScanQueue.Arn
-      FunctionName: !GetAtt TranscriptionJobScanFunction.Arn
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt TranscriptionJobStateChangeFunction.Arn
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt TranscriptionJobEventsRule.Arn
+  TranscriptionJobEventsRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: Monitors Amazon Transcribe for job state changes
+      EventPattern: |
+        {
+          "source": [
+            "aws.transcribe"
+          ],
+          "detail-type": [
+            "Transcribe Job State Change"
+          ],
+          "detail": {
+            "TranscriptionJobStatus": [
+              "COMPLETED",
+              "FAILED"
+            ]
+          }
+        }
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt TranscriptionJobStateChangeFunction.Arn
+          Id: !Sub "${AWS::StackName}.Transcribe.JobState"
   # Website API
   WebsiteApiFunction:
     Type: AWS::Lambda::Function
@@ -377,7 +374,7 @@ Resources:
     Type: AWS::Lambda::Permission
     Properties:
       Action: lambda:InvokeFunction
-      FunctionName: !Ref WebsiteApiFunction
+      FunctionName: !GetAtt WebsiteApiFunction.Arn
       Principal: apigateway.amazonaws.com
       SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${WebsiteApi}/${WebsiteApiStage}/*"
   # Static Website
@@ -435,7 +432,7 @@ Resources:
     Type: AWS::Lambda::Permission
     Properties:
       Action: lambda:InvokeFunction
-      FunctionName: !Ref StaticWebsiteFunction
+      FunctionName: !GetAtt StaticWebsiteFunction.Arn
       Principal: apigateway.amazonaws.com
       SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${WebsiteApi}/${WebsiteApiStage}/*"
   StaticWebsiteAuthorizerFunction:
