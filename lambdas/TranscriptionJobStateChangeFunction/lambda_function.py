@@ -12,12 +12,15 @@ transcribe = boto3.client('transcribe')
 media_bucket_name = os.environ['MEDIA_BUCKET_NAME']
 
 
-def get_s3_metadata(s3_url):
+def s3_key_from_url(s3_url):
     exp = f".*{media_bucket_name}/(.*)"
     match = re.search(exp, s3_url)
+    return match.group(1)
 
+
+def get_s3_metadata(s3_url):
     bucket = media_bucket_name
-    key = match.group(1)
+    key = s3_key_from_url(s3_url)
 
     return s3.head_object(Bucket=bucket, Key=key)['Metadata']
 
@@ -98,7 +101,7 @@ def parse_transcript_data(transcript_data):
         text = '\n\n'.join(lines)
 
         return text
-    except:
+    except Exception:
         return ''
 
 
@@ -166,10 +169,18 @@ def lambda_handler(event, context):
 
         parsed_transcript = parse_transcript_data(transcript_data)
 
-        body = f"{parsed_transcript}\n\n\n\n{transcript}"
+        body = ''.join([
+            f"Original file: {s3_key_from_url(media_uri)}",
+            '\n\n',
+            'Below are a parsed and raw transcript of your audio.',
+            '\n\n==========================\n\n',
+            parsed_transcript,
+            '\n\n==========================\n\n',
+            transcript
+        ])
 
         print(f"Sending notification to {notification_email}")
-        send_email(notification_email, 'Transcript is ready', body)
+        send_email(notification_email, 'Transcript is complete', body)
     else:
         # TODO
         pass
