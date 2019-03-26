@@ -1,6 +1,6 @@
 # serverless-transcribe
 
-A simple UI for [Amazon Transcribe](https://aws.amazon.com/transcribe/)
+A simple web UI for [Amazon Transcribe](https://aws.amazon.com/transcribe/). Supports MP3, MP4, WAV, and FLAC audio without any fixed costs.
 
 ## How it Works
 
