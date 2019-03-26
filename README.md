@@ -1,12 +1,12 @@
 # serverless-transcribe
 
-A simple UI for [Amazon Transcribe](https://aws.amazon.com/transcribe/)
+A simple web UI for [Amazon Transcribe](https://aws.amazon.com/transcribe/). Supports MP3, MP4, WAV, and FLAC audio without any fixed costs.
 
 ## How it Works
 
 Once the project has been launched in [CloudFormation](https://aws.amazon.com/cloudformation/), you will have access to a webpage that allows users to upload audio files. The page uploads the files directly to [S3](https://aws.amazon.com/s3/). The S3 bucket is configured to watch for audio files. When it sees new audio files, an [AWS Lambda](https://aws.amazon.com/lambda/) function is invoked, which starts a transcription job.
 
-Periodically, after each job has started, another Lambda function checks on the job's status. Once it sees that a job has completed, the raw transcript is extracted from the job results, and is emailed to the user who uploaded the file.
+Another Lambda function is triggered via [CloudWatch Events](https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/WhatIsCloudWatchEvents.html) when the transcription job completes (or fails). An email is sent to the user who uploaded file with details about the job failure, or a raw transcript that is extracted from the job results.
 
 The webpage is protected by HTTP Basic authentication, with a single set of credentials that you set when launching the stack. This is handled by an authorizer on the [API Gateway](https://aws.amazon.com/api-gateway/), and could be extended to allow for more complicated authorization schemes.
 
@@ -15,10 +15,6 @@ Amazon Transcribe currently has file limits of 2 hours and 1 GB.
 ### AWS Costs
 
 The cost of running and using this project are almost entirely based on usage. Media files uploaded to S3 are set to expire after one day, and the resulting files in the transcripts bucket expire after 30 days. The Lambda functions have no fixed costs, so you will only be charged when they are invoked. Amazon Transcribe is "[pay-as-you-go](https://aws.amazon.com/transcribe/pricing/) based on the seconds of audio transcribed per month".
-
-One Lambda function has an [SQS](https://aws.amazon.com/sqs/) event source, which uses long polling to watch for messages. The function is only called when messages are availabe in the queue, but the polling will generate API calls to SQS on a fairly continous basis. Please see the end of this [blog post](https://aws.amazon.com/blogs/aws/aws-lambda-adds-amazon-simple-queue-service-to-supported-event-sources/) for more information.
-
-> **Please note:** My experience has been that when the Lambda service is long polling an empty queue, it usually generates about 75 requests per 5 minutes, or just over 21,500 requests per day. Ignoring the 1,000,000 monthly free requests that all AWS accounts get in perpituity, that is a daily cost of about $0.0086 per day, or 26 cents per month.
 
 Most resources created from the CloudFormation template include a `Project` resource tag, which you can use for cost allocation. Unfortunately Amazon Transcribe jobs cannot be tracked this way.
 
@@ -29,7 +25,7 @@ The project is organized using a CloudFormation [template](https://github.com/fa
 ### Requirements
 
 - The stack must be launched in an AWS region that supports [SES](https://aws.amazon.com/ses/). There aren't [many of these](https://docs.aws.amazon.com/ses/latest/DeveloperGuide/regions.html), unfortunately. The addresses that SES will send to and from are determined by your SES domain verification and sandboxing status.
-- There must be a pre-existing S3 bucket where resources (like Lambda function code) needed to launch the stack can be found. This can be any bucket that CloudFormation will have read access to when launching the stack (based on the role used to execute the launch).
+- There must be a pre-existing S3 bucket where resources (like Lambda function code) needed to launch the stack can be found. This can be any bucket that CloudFormation will have read access to when launching the stack (based on the role used to execute the launch). The bucket must have object versioning enabled.
 
 ### Using the Deploy Script
 
@@ -40,7 +36,7 @@ The deploy script will zip all the files in the `lambdas/` directory, and push t
 **Please note** that the template expects Lambda function code zip files' object keys to be prefixed with the stack's name. For example, if your `STACK_RESOURCES_BUCKET=my_code_bucket`, and you name the stack `my_transcription_app`, CloudFormation will look for a file such as:
 
 ```
-s3://my_code_bucket/my_transcription_app/lambdas/transcription_job_scan.zip
+s3://my_code_bucket/my_transcription_app/lambdas/TranscriptionJobStartFunction.zip
 ```
 
 The deploy script will put files in the correct place in S3. If you chose to launch the stack through the Console you will need to create the zip files yourself, and ensure they end up in the correct bucket with the correct prefix.
@@ -48,5 +44,3 @@ The deploy script will put files in the correct place in S3. If you chose to lau
 The `UPLOAD_ACCESS_KEY` ID and secret are used to sign the upload requests the webpage makes to S3. The access key you provide must have the ability to do that.
 
 Once the deploy script has finished running, it will print the URL for the upload webpage. You should be able to visit that page, enter the HTTP basic auth credentials you set, and upload a file for transcription.
-
-Currently the deploy script will not push Lambda code changes to the deployed functions. The code will be pushed to S3, but CloudFormation will not update the function from the newer zip file. (WIP)

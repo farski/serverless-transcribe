@@ -50,7 +50,8 @@
       }
       fieldset label:first-of-type { margin: 0; }
 
-      fieldset input[type='text'] {
+      fieldset input[type='text'],
+      fieldset input[type='number'] {
         font-size: 24px;
         padding: 8px;
       }
@@ -89,6 +90,10 @@
 
         if (!document.getElementById('s3_amz_meta_email').value) { return; }
 
+        if (!document.getElementById('s3_amz_meta_maxspeakerlabels').value) { return; }
+        if (+document.getElementById('s3_amz_meta_maxspeakerlabels').value > 10) { return; }
+        if (+document.getElementById('s3_amz_meta_maxspeakerlabels').value < 1) { return; }
+
         document.getElementById('s3_submit').removeAttribute('disabled');
       }
 
@@ -110,10 +115,12 @@
           validate();
         });
 
+        const maxspeakerlabels_field = document.getElementById('s3_amz_meta_maxspeakerlabels');
+        maxspeakerlabels_field.addEventListener('change', ev => { validate(); });
+        maxspeakerlabels_field.addEventListener('keydown', ev => { validate(); });
+
         const email_field = document.getElementById('s3_amz_meta_email');
-        email_field.addEventListener('keydown', ev => {
-          validate();
-        });
+        email_field.addEventListener('keydown', ev => { validate(); });
       });
     })();
 
@@ -147,18 +154,24 @@
 
       <fieldset>
         <legend>Transcription Details:</legend>
+
         <label for=s3_amz_meta_email>Email</label>
         <input name=x-amz-meta-email id=s3_amz_meta_email type=text placeholder=alice@example.com>
         <small>The transcript will be emailed to this address</small>
 
+        <label for=s3_amz_meta_maxspeakerlabels>Speakers</label>
+        <input name=x-amz-meta-maxspeakerlabels id=s3_amz_meta_maxspeakerlabels type=number min=1 max=10 value=2>
+        <small>The number of unique voices in your audio, with a maximum of <strong>10</strong>. Setting this correctly helps the voice recognition software identify speakers more accurately.</small>
+
         <label for=s3_file>File</label>
         <!-- Any POST data after the `file` field is ignored by S3 -->
-        <input type=file name=file id=s3_file accept=".mp3,.mp4,.m4a,.wav">
-        <small>Supports: MP3, MP4, and WAV</small>
+        <input type=file name=file id=s3_file accept=.mp3,.mp4,.m4a,.flac,.wav>
+        <small>Supports: MP3, MP4, FLAC, and WAV</small>
         <small>Limits: 2 hours, 1 GB</small>
       </fieldset>
 
-      <p>Once the upload completes, the file will be processed in the cloud. You can leave this page or upload more files without interrupting the transcription process. You will receive an email with the transcript once it is complete. This can take some time, depending on the length of the audio. You will not get a notification if the transcription fails. (Sorry)</p>
+      <p>Once the upload completes, the file will be processed in the cloud. You can leave this page or upload more files without interrupting the transcription process. You will receive an email with the transcript once it is complete. This can take some time, depending on the length of the audio.</p>
+      <p>Estimated processing time: 5 minutes of audio = 3 minutes to process; 40 minutes of audio = 12 minutes to process.</p>
       <input type=submit name=submit value=Upload disabled=disabled id=s3_submit>
     </form>
   </body>
