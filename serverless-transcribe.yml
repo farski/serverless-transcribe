@@ -4,10 +4,6 @@ Description: >
 Parameters:
   MediaBucketIdentifier:
     Type: String
-  UploadAccessKeyId:
-    Type: String
-  UploadSecretAccessKey:
-    Type: String
   StackResourcesBucket:
     Type: String
   StackResourcesPrefix:
@@ -98,6 +94,25 @@ Resources:
       Tags:
         - Key: Project
           Value: serverless-transcribe
+  MediaBucketAccessIamUser:
+    Type: AWS::IAM::User
+    Properties:
+      Policies:
+        - PolicyName: MediaBucketUploadSigningPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action:
+                  - "s3:*"
+                Resource:
+                  - !Sub "arn:aws:s3:::${AWS::StackName}-${MediaBucketIdentifier}"
+                  - !Sub "arn:aws:s3:::${AWS::StackName}-${MediaBucketIdentifier}/*"
+  MediaBucketAccessIamUserAccessKey:
+    Type: AWS::IAM::AccessKey
+    Properties:
+      Status: Active
+      UserName: !Ref MediaBucketAccessIamUser
   # Transcription Job Start
   TranscriptionJobStartFunctionMediaBucketPermission:
     Type: AWS::Lambda::Permission
@@ -303,8 +318,8 @@ Resources:
         Variables:
           MEDIA_BUCKET: !Ref MediaBucket
           MEDIA_BUCKET_DOMAIN_NAME: !GetAtt MediaBucket.RegionalDomainName
-          UPLOAD_ACCESS_KEY_ID: !Ref UploadAccessKeyId
-          UPLOAD_SECRET_ACCESS_KEY: !Ref UploadSecretAccessKey
+          UPLOAD_ACCESS_KEY_ID: !Ref MediaBucketAccessIamUserAccessKey
+          UPLOAD_SECRET_ACCESS_KEY: !GetAtt MediaBucketAccessIamUserAccessKey.SecretAccessKey
       Handler: lambda_function.lambda_handler
       MemorySize: 128
       Role: !GetAtt WebsiteApiFunctionIamRole.Arn

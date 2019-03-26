@@ -41,6 +41,4 @@ s3://my_code_bucket/my_transcription_app/lambdas/TranscriptionJobStartFunction.z
 
 The deploy script will put files in the correct place in S3. If you chose to launch the stack through the Console you will need to create the zip files yourself, and ensure they end up in the correct bucket with the correct prefix.
 
-The `UPLOAD_ACCESS_KEY` ID and secret are used to sign the upload requests the webpage makes to S3. The access key you provide must have the ability to do that.
-
 Once the deploy script has finished running, it will print the URL for the upload webpage. You should be able to visit that page, enter the HTTP basic auth credentials you set, and upload a file for transcription.

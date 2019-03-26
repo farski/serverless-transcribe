@@ -34,8 +34,6 @@ aws cloudformation deploy \
         --parameter-overrides \
                 StackResourcesBucket=$STACK_RESOURCES_BUCKET \
                 StackResourcesPrefix=$CLOUDFORMATION_STACK_NAME \
-                UploadSecretAccessKey=$UPLOAD_SECRET_ACCESS_KEY \
-                UploadAccessKeyId=$UPLOAD_ACCESS_KEY_ID \
                 MediaBucketIdentifier=$MEDIA_BUCKET_IDENTIFIER \
                 BasicAuthUsername=$BASIC_AUTH_USERNAME \
                 BasicAuthPassword=$BASIC_AUTH_PASSWORD \
