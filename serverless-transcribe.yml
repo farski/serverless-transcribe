@@ -193,7 +193,7 @@ Resources:
           MEDIA_BUCKET_NAME: !Ref MediaBucket
           NOTIFICATION_SOURCE_EMAIL_ADDRESS: !Ref NotificationSourceEmailAddress
       Handler: lambda_function.lambda_handler
-      MemorySize: 128
+      MemorySize: 256
       Role: !GetAtt TranscriptionJobStateChangeFunctionIamRole.Arn
       Runtime: python3.6
       Tags:
