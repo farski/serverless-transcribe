@@ -24,6 +24,8 @@ def get_media_format(path):
         return 'mp4'
     elif re.search('.wav$', path) is not None:
         return 'wav'
+    elif re.search('.flac$', path) is not None:
+        return 'flac'
     else:
         return 'mp3'
 
