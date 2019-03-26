@@ -88,6 +88,13 @@ Resources:
                   - Name: suffix
                     Value: .wav
             Function: !GetAtt TranscriptionJobStartFunction.Arn
+          - Event: s3:ObjectCreated:*
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: suffix
+                    Value: .flac
+            Function: !GetAtt TranscriptionJobStartFunction.Arn
       Tags:
         - Key: Project
           Value: serverless-transcribe
