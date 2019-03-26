@@ -46,6 +46,62 @@ def get_transcript_data(transcription_job):
     return transcript_data
 
 
+def parse_transcript_data(transcript_data):
+    try:
+        # Segments are a start and end time associated with a speaker
+        segments = transcript_data['results']['speaker_labels']['segments']
+
+        # Generate a list of end times from all the segments
+        segment_boundaries = []
+        for segment in segments:
+            segment_boundaries.append(float(segment['end_time']))
+            segment['_items'] = []
+
+        # Loop through all the items and add them to the segment they belong
+        # to. Some items don't have a time (like punctuation), and always
+        # considered to be part of the same segment as the last seen
+        # timestamped item.
+        for item in transcript_data['results']['items']:
+            active_segment_index = len(segments) - len(segment_boundaries)
+
+            if 'start_time' in item:
+                # Check to see which segment we're in
+                if float(item['start_time']) > segment_boundaries[0]:
+                    # We've moved into the next segment
+                    # Add this item to the next segment
+                    segments[active_segment_index + 1]['_items'].append(item)
+                    # Remove the current segment from the list
+                    del segment_boundaries[0]
+                else:
+                    # Still in the same segment
+                    segments[active_segment_index]['_items'].append(item)
+            else:
+                # Continue with active speaker and segment
+                segments[active_segment_index]['_items'].append(item)
+
+        # Each segment is treated as a continuous block of text (i.e., a
+        # paragraph). The segments speaker label (e.g., spk_0) is prepended to
+        # the text.
+        lines = []
+
+        for segment in segments:
+            contents = []
+
+            for item in segment['_items']:
+                if item['type'] == 'pronunciation':
+                    contents.append(' ')
+
+                contents.append(item['alternatives'][0]['content'])
+
+            lines.append(f"{segment['speaker_label']}: {''.join(contents)}")
+
+        text = '\n\n'.join(lines)
+
+        return text
+    except:
+        return ''
+
+
 def send_email(to, subject, body):
     ses.send_email(
         Source=os.environ['NOTIFICATION_SOURCE_EMAIL_ADDRESS'],
@@ -108,8 +164,12 @@ def lambda_handler(event, context):
         transcripts = transcript_data['results']['transcripts']
         transcript = transcripts[0]['transcript']
 
+        parsed_transcript = parse_transcript_data(transcript_data)
+
+        body = f"{parsed_transcript}\n\n\n\n{transcript}"
+
         print(f"Sending notification to {notification_email}")
-        send_email(notification_email, 'Transcript is ready', transcript)
+        send_email(notification_email, 'Transcript is ready', body)
     else:
         # TODO
         pass
