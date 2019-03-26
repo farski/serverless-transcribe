@@ -6,6 +6,7 @@ import boto3
 import uuid
 import os
 import re
+import urllib.parse
 
 s3 = boto3.client('s3')
 ses = boto3.client('ses')
@@ -36,7 +37,8 @@ def lambda_handler(event, context):
     transcription_job_name = uuid.uuid4()
 
     bucket_name = event['Records'][0]['s3']['bucket']['name']
-    object_key = event['Records'][0]['s3']['object']['key']
+    _object_key = event['Records'][0]['s3']['object']['key']
+    object_key = urllib.parse.unquote_plus(_object_key)
 
     print(f"Starting transcription job: {transcription_job_name}")
     print(f"Object: {bucket_name}/{object_key}")
