@@ -41,6 +41,10 @@ def lambda_handler(event, context):
     print(f"Starting transcription job: {transcription_job_name}")
     print(f"Object: {bucket_name}/{object_key}")
 
+    media_metadata = get_s3_metadata(bucket_name, object_key)
+    notification_email = media_metadata['email']
+    max_speaker_labels = int(media_metadata['maxspeakerlabels'])
+
     transcribe.start_transcription_job(
         TranscriptionJobName=f"{transcription_job_name}",
         LanguageCode='en-US',
@@ -48,15 +52,12 @@ def lambda_handler(event, context):
         Media={
             'MediaFileUri': f"https://{s3_host}/{bucket_name}/{object_key}"
         },
-        # Settings={
-        #     'MaxSpeakerLabels': 5,
-        #     'ShowSpeakerLabels': True
-        # },
+        Settings={
+            'MaxSpeakerLabels': max_speaker_labels,
+            'ShowSpeakerLabels': True
+        },
         OutputBucketName=os.environ['TRANSCRIPTIONS_OUTPUT_BUCKET'],
     )
-
-    media_metadata = get_s3_metadata(bucket_name, object_key)
-    notification_email = media_metadata['email']
 
     ses.send_email(
         Source=os.environ['NOTIFICATION_SOURCE_EMAIL_ADDRESS'],

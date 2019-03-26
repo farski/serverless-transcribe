@@ -50,7 +50,8 @@
       }
       fieldset label:first-of-type { margin: 0; }
 
-      fieldset input[type='text'] {
+      fieldset input[type='text'],
+      fieldset input[type='number'] {
         font-size: 24px;
         padding: 8px;
       }
@@ -89,6 +90,10 @@
 
         if (!document.getElementById('s3_amz_meta_email').value) { return; }
 
+        if (!document.getElementById('s3_amz_meta_maxspeakerlabels').value) { return; }
+        if (+document.getElementById('s3_amz_meta_maxspeakerlabels').value > 10) { return; }
+        if (+document.getElementById('s3_amz_meta_maxspeakerlabels').value < 1) { return; }
+
         document.getElementById('s3_submit').removeAttribute('disabled');
       }
 
@@ -110,10 +115,12 @@
           validate();
         });
 
+        const maxspeakerlabels_field = document.getElementById('s3_amz_meta_maxspeakerlabels');
+        maxspeakerlabels_field.addEventListener('change', ev => { validate(); });
+        maxspeakerlabels_field.addEventListener('keydown', ev => { validate(); });
+
         const email_field = document.getElementById('s3_amz_meta_email');
-        email_field.addEventListener('keydown', ev => {
-          validate();
-        });
+        email_field.addEventListener('keydown', ev => { validate(); });
       });
     })();
 
@@ -147,9 +154,14 @@
 
       <fieldset>
         <legend>Transcription Details:</legend>
+
         <label for=s3_amz_meta_email>Email</label>
         <input name=x-amz-meta-email id=s3_amz_meta_email type=text placeholder=alice@example.com>
         <small>The transcript will be emailed to this address</small>
+
+        <label for=s3_amz_meta_maxspeakerlabels>Speakers</label>
+        <input name=x-amz-meta-maxspeakerlabels id=s3_amz_meta_maxspeakerlabels type=number min=1 max=10 value=2>
+        <small>The number of unique voices in your audio, with a maximum of <strong>10</strong>. Setting this correctly helps the voice recognition software identify speakers more accurately.</small>
 
         <label for=s3_file>File</label>
         <!-- Any POST data after the `file` field is ignored by S3 -->
