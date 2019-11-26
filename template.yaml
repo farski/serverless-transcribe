@@ -1,29 +1,13 @@
 AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
 Description: >
   Easy serverless Amazon Trascribe
 Parameters:
-  MediaBucketIdentifier:
-    Type: String
-  StackResourcesBucket:
-    Type: String
-  StackResourcesPrefix:
-    Type: String
   BasicAuthUsername:
     Type: String
   BasicAuthPassword:
     Type: String
   NotificationSourceEmailAddress:
-    Type: String
-  # S3 Object Verion Parameters
-  TranscriptionJobStartFunctionS3ObjectVersion:
-    Type: String
-  WebsiteApiFunctionS3ObjectVersion:
-    Type: String
-  StaticWebsiteFunctionS3ObjectVersion:
-    Type: String
-  StaticWebsiteAuthorizerFunctionS3ObjectVersion:
-    Type: String
-  TranscriptionJobStateChangeFunctionS3ObjectVersion:
     Type: String
 Resources:
   TranscriptionsBucket:
@@ -41,7 +25,6 @@ Resources:
     Type: AWS::S3::Bucket
     DeletionPolicy: Retain
     Properties:
-      BucketName: !Sub "${AWS::StackName}-${MediaBucketIdentifier}"
       CorsConfiguration:
         CorsRules:
           - AllowedHeaders:
@@ -54,60 +37,26 @@ Resources:
         Rules:
           - ExpirationInDays: 1
             Status: Enabled
-      NotificationConfiguration:
-        LambdaConfigurations:
-          - Event: s3:ObjectCreated:*
-            Filter:
-              S3Key:
-                Rules:
-                  - Name: suffix
-                    Value: .mp3
-            Function: !GetAtt TranscriptionJobStartFunction.Arn
-          - Event: s3:ObjectCreated:*
-            Filter:
-              S3Key:
-                Rules:
-                  - Name: suffix
-                    Value: .mp4
-            Function: !GetAtt TranscriptionJobStartFunction.Arn
-          - Event: s3:ObjectCreated:*
-            Filter:
-              S3Key:
-                Rules:
-                  - Name: suffix
-                    Value: .m4a
-            Function: !GetAtt TranscriptionJobStartFunction.Arn
-          - Event: s3:ObjectCreated:*
-            Filter:
-              S3Key:
-                Rules:
-                  - Name: suffix
-                    Value: .wav
-            Function: !GetAtt TranscriptionJobStartFunction.Arn
-          - Event: s3:ObjectCreated:*
-            Filter:
-              S3Key:
-                Rules:
-                  - Name: suffix
-                    Value: .flac
-            Function: !GetAtt TranscriptionJobStartFunction.Arn
       Tags:
         - Key: Project
           Value: serverless-transcribe
   MediaBucketAccessIamUser:
     Type: AWS::IAM::User
+  MediaBucketAccessIamUserPolicy:
+    Type: AWS::IAM::Policy
     Properties:
-      Policies:
-        - PolicyName: MediaBucketUploadSigningPolicy
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Effect: "Allow"
-                Action:
-                  - "s3:*"
-                Resource:
-                  - !Sub "arn:aws:s3:::${AWS::StackName}-${MediaBucketIdentifier}"
-                  - !Sub "arn:aws:s3:::${AWS::StackName}-${MediaBucketIdentifier}/*"
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Action:
+              - "s3:*"
+            Resource:
+              - !GetAtt MediaBucket.Arn
+              - !Sub ${MediaBucket.Arn}/*
+      PolicyName: !Sub ${AWS::StackName}-MediaBucketUploadSigningPolicy
+      Users:
+        - !Ref MediaBucketAccessIamUser
   MediaBucketAccessIamUserAccessKey:
     Type: AWS::IAM::AccessKey
     Properties:
@@ -121,27 +70,74 @@ Resources:
       FunctionName: !GetAtt TranscriptionJobStartFunction.Arn
       Principal: s3.amazonaws.com
       # SourceArn: !GetAtt MediaBucket.Arn
-      SourceArn: !Sub "arn:aws:s3:::${AWS::StackName}-${MediaBucketIdentifier}"
+      SourceArn: !GetAtt MediaBucket.Arn
   TranscriptionJobStartFunction:
-    Type: AWS::Lambda::Function
+    Type: AWS::Serverless::Function
     Properties:
-      Code:
-        S3Bucket: !Ref StackResourcesBucket
-        S3Key: !Sub "${StackResourcesPrefix}/lambdas/TranscriptionJobStartFunction.zip"
-        S3ObjectVersion: !Ref TranscriptionJobStartFunctionS3ObjectVersion
+      CodeUri: lambdas/TranscriptionJobStartFunction/
       Description: >
         Starts transcription jobs when triggered by S3 events
       Environment:
         Variables:
           NOTIFICATION_SOURCE_EMAIL_ADDRESS: !Ref NotificationSourceEmailAddress
           TRANSCRIPTIONS_OUTPUT_BUCKET: !Ref TranscriptionsBucket
+      Events:
+        Mp3Created:
+          Properties:
+            Bucket: !Ref MediaBucket
+            Events: s3:ObjectCreated:*
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: suffix
+                    Value: .mp3
+          Type: S3
+        Mp4Created:
+          Properties:
+            Bucket: !Ref MediaBucket
+            Events: s3:ObjectCreated:*
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: suffix
+                    Value: .mp4
+          Type: S3
+        M4aCreated:
+          Properties:
+            Bucket: !Ref MediaBucket
+            Events: s3:ObjectCreated:*
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: suffix
+                    Value: .m4a
+          Type: S3
+        WavCreated:
+          Properties:
+            Bucket: !Ref MediaBucket
+            Events: s3:ObjectCreated:*
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: suffix
+                    Value: .wav
+          Type: S3
+        FlacCreated:
+          Properties:
+            Bucket: !Ref MediaBucket
+            Events: s3:ObjectCreated:*
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: suffix
+                    Value: .flac
+          Type: S3
       Handler: lambda_function.lambda_handler
       MemorySize: 128
       Role: !GetAtt TranscriptionJobStartFunctionIamRole.Arn
-      Runtime: python3.6
+      Runtime: python3.7
       Tags:
-        - Key: Project
-          Value: serverless-transcribe
+        Project: serverless-transcribe
       Timeout: 8
   TranscriptionJobStartFunctionIamRole:
     Type: AWS::IAM::Role
@@ -157,17 +153,6 @@ Resources:
               - sts:AssumeRole
       Path: "/"
       Policies:
-        - PolicyName: MediaBucketReadOnly
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Effect: Allow
-                Action:
-                  - s3:ListBucket
-                  - s3:GetObject
-                Resource:
-                  - !Sub "arn:aws:s3:::${AWS::StackName}-${MediaBucketIdentifier}"
-                  - !Sub "arn:aws:s3:::${AWS::StackName}-${MediaBucketIdentifier}/*"
         - PolicyName: TranscriptionsBucketWriteAccess
           PolicyDocument:
             Version: "2012-10-17"
@@ -179,7 +164,7 @@ Resources:
                   - s3:Put*
                 Resource:
                   - !GetAtt TranscriptionsBucket.Arn
-                  - !Sub "${TranscriptionsBucket.Arn}/*"
+                  - !Sub ${TranscriptionsBucket.Arn}/*
         - PolicyName: Transcribe
           PolicyDocument:
             Version: "2012-10-17"
@@ -201,14 +186,27 @@ Resources:
                   - "*"
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+  TranscriptionJobStartFunctionIamRoleMediaBucketPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action:
+              - s3:ListBucket
+              - s3:GetObject
+            Resource:
+              - !GetAtt MediaBucket.Arn
+              - !Sub ${MediaBucket.Arn}/*
+      PolicyName: !Sub ${AWS::StackName}-JobStartMediaBucketReadOnly
+      Roles:
+        - !Ref TranscriptionJobStartFunctionIamRole
   # Transcription Job Events
   TranscriptionJobStateChangeFunction:
-    Type: AWS::Lambda::Function
+    Type: AWS::Serverless::Function
     Properties:
-      Code:
-        S3Bucket: !Ref StackResourcesBucket
-        S3Key: !Sub "${StackResourcesPrefix}/lambdas/TranscriptionJobStateChangeFunction.zip"
-        S3ObjectVersion: !Ref TranscriptionJobStateChangeFunctionS3ObjectVersion
+      CodeUri: lambdas/TranscriptionJobStateChangeFunction/
       Description: Handles transcription job state change events
       Environment:
         Variables:
@@ -217,10 +215,9 @@ Resources:
       Handler: lambda_function.lambda_handler
       MemorySize: 256
       Role: !GetAtt TranscriptionJobStateChangeFunctionIamRole.Arn
-      Runtime: python3.6
+      Runtime: python3.7
       Tags:
-        - Key: Project
-          Value: serverless-transcribe
+        Project: serverless-transcribe
       Timeout: 16
   TranscriptionJobStateChangeFunctionIamRole:
     Type: AWS::IAM::Role
@@ -244,7 +241,7 @@ Resources:
                 Action:
                   - s3:GetObject
                 Resource:
-                  - !Sub "${MediaBucket.Arn}/*"
+                  - !Sub ${MediaBucket.Arn}/*
         - PolicyName: TranscriptionsBucketReadAccess
           PolicyDocument:
             Version: "2012-10-17"
@@ -253,7 +250,7 @@ Resources:
                 Action:
                   - s3:GetObject
                 Resource:
-                  - !Sub "${TranscriptionsBucket.Arn}/*"
+                  - !Sub ${TranscriptionsBucket.Arn}/*
         - PolicyName: Transcribe
           PolicyDocument:
             Version: "2012-10-17"
@@ -303,15 +300,12 @@ Resources:
       State: ENABLED
       Targets:
         - Arn: !GetAtt TranscriptionJobStateChangeFunction.Arn
-          Id: !Sub "${AWS::StackName}.Transcribe.JobState"
+          Id: !Sub ${AWS::StackName}.Transcribe.JobState
   # Website API
   WebsiteApiFunction:
-    Type: AWS::Lambda::Function
+    Type: AWS::Serverless::Function
     Properties:
-      Code:
-        S3Bucket: !Ref StackResourcesBucket
-        S3Key: !Sub "${StackResourcesPrefix}/lambdas/WebsiteApiFunction.zip"
-        S3ObjectVersion: !Ref WebsiteApiFunctionS3ObjectVersion
+      CodeUri: lambdas/WebsiteApiFunction/
       Description: >
         Provides a simple API for browser-based S3 uploading
       Environment:
@@ -323,10 +317,9 @@ Resources:
       Handler: lambda_function.lambda_handler
       MemorySize: 128
       Role: !GetAtt WebsiteApiFunctionIamRole.Arn
-      Runtime: python3.6
+      Runtime: python3.7
       Tags:
-        - Key: Project
-          Value: serverless-transcribe
+        Project: serverless-transcribe
       Timeout: 3
   WebsiteApiFunctionIamRole:
     Type: AWS::IAM::Role
@@ -401,21 +394,17 @@ Resources:
       SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${WebsiteApi}/${WebsiteApiStage}/*"
   # Static Website
   StaticWebsiteFunction:
-    Type: AWS::Lambda::Function
+    Type: AWS::Serverless::Function
     Properties:
-      Code:
-        S3Bucket: !Ref StackResourcesBucket
-        S3Key: !Sub "${StackResourcesPrefix}/lambdas/StaticWebsiteFunction.zip"
-        S3ObjectVersion: !Ref StaticWebsiteFunctionS3ObjectVersion
+      CodeUri: lambdas/StaticWebsiteFunction/
       Description: >
         Generates a basic front end for uploading files to S3
       Handler: lambda_function.lambda_handler
       MemorySize: 128
       Role: !GetAtt StaticWebsiteFunctionIamRole.Arn
-      Runtime: python3.6
+      Runtime: python3.7
       Tags:
-        - Key: Project
-          Value: serverless-transcribe
+        Project: serverless-transcribe
       Timeout: 3
   StaticWebsiteFunctionIamRole:
     Type: AWS::IAM::Role
@@ -458,12 +447,9 @@ Resources:
       Principal: apigateway.amazonaws.com
       SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${WebsiteApi}/${WebsiteApiStage}/*"
   StaticWebsiteAuthorizerFunction:
-    Type: AWS::Lambda::Function
+    Type: AWS::Serverless::Function
     Properties:
-      Code:
-        S3Bucket: !Ref StackResourcesBucket
-        S3Key: !Sub "${StackResourcesPrefix}/lambdas/StaticWebsiteAuthorizerFunction.zip"
-        S3ObjectVersion: !Ref StaticWebsiteAuthorizerFunctionS3ObjectVersion
+      CodeUri: lambdas/StaticWebsiteAuthorizerFunction/
       Description: >
         Authorizer for S3 file upload front end
       Environment:
@@ -473,10 +459,9 @@ Resources:
       Handler: lambda_function.lambda_handler
       MemorySize: 128
       Role: !GetAtt StaticWebsiteAuthorizerFunctionIamRole.Arn
-      Runtime: python3.6
+      Runtime: python3.7
       Tags:
-        - Key: Project
-          Value: serverless-transcribe
+        Project: serverless-transcribe
       Timeout: 3
   StaticWebsiteAuthorizerFunctionIamRole:
     Type: AWS::IAM::Role
