@@ -6,11 +6,13 @@ A simple web UI for [Amazon Transcribe](https://aws.amazon.com/transcribe/). Sup
 
 Once the project has been launched in [CloudFormation](https://aws.amazon.com/cloudformation/), you will have access to a webpage that allows users to upload audio files. The page uploads the files directly to [S3](https://aws.amazon.com/s3/). The S3 bucket is configured to watch for audio files. When it sees new audio files, an [AWS Lambda](https://aws.amazon.com/lambda/) function is invoked, which starts a transcription job.
 
+File detection is based on the file extension. Supported extensions are: `.mp3`, `.mp4`, `.m4a`, `.wav`, and `.flac`.
+
 Another Lambda function is triggered via [CloudWatch Events](https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/WhatIsCloudWatchEvents.html) when the transcription job completes (or fails). An email is sent to the user who uploaded file with details about the job failure, or a raw transcript that is extracted from the job results.
 
 The webpage is protected by HTTP Basic authentication, with a single set of credentials that you set when launching the stack. This is handled by an authorizer on the [API Gateway](https://aws.amazon.com/api-gateway/), and could be extended to allow for more robust authorization schemes.
 
-Amazon Transcribe currently has file limits of 2 hours and 1 GB.
+Amazon Transcribe currently has file limits of 4 hours and 2 Gb.
 
 ### AWS Costs
 
