@@ -12,7 +12,7 @@ Another Lambda function is triggered via [CloudWatch Events](https://docs.aws.am
 
 The webpage is protected by HTTP Basic authentication, with a single set of credentials that you set when launching the stack. This is handled by an authorizer on the [API Gateway](https://aws.amazon.com/api-gateway/), and could be extended to allow for more robust authorization schemes.
 
-Amazon Transcribe currently has file limits of 4 hours and 2 Gb.
+Amazon Transcribe currently has file limits of 4 hours and 2 GB.
 
 ### AWS Costs
 
