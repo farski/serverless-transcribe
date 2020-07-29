@@ -56,6 +56,11 @@
         padding: 8px;
       }
 
+      fieldset select {
+        font-size: 14px;
+        padding: 8px;
+      }
+
       input[type='submit'] {
         background: #e9e9e9;
         border: 0;
@@ -90,6 +95,8 @@
 
         if (!document.getElementById('s3_amz_meta_email').value) { return; }
 
+        if (!document.getElementById('s3_amz_meta_languagecode').value) { return; }
+
         if (!document.getElementById('s3_amz_meta_maxspeakerlabels').value) { return; }
         if (+document.getElementById('s3_amz_meta_maxspeakerlabels').value > 10) { return; }
         if (+document.getElementById('s3_amz_meta_maxspeakerlabels').value < 1) { return; }
@@ -121,6 +128,9 @@
 
         const email_field = document.getElementById('s3_amz_meta_email');
         email_field.addEventListener('keydown', ev => { validate(); });
+
+        const language_field = document.getElementById('s3_amz_meta_languagecode');
+        language_field.addEventListener('change', ev => { validate(); });
       });
     })();
 
@@ -162,6 +172,42 @@
         <label for=s3_amz_meta_maxspeakerlabels>Speakers</label>
         <input name=x-amz-meta-maxspeakerlabels id=s3_amz_meta_maxspeakerlabels type=number min=2 max=10 value=2>
         <small>The number of unique voices in your audio, with a maximum of <strong>10</strong>. Setting this correctly helps the voice recognition software identify speakers more accurately.</small>
+
+        <label for=s3_amz_meta_languagecode>Language</label>
+        <select name=x-amz-meta-languagecode id=s3_amz_meta_languagecode>
+          <option>en-US</option>
+          <option>en-GB</option>
+          <option>es-US</option>
+          <option>en-AU</option>
+          <option>fr-CA</option>
+          <option>de-DE</option>
+          <option>pt-BR</option>
+          <option>fr-FR</option>
+          <option>it-IT</option>
+          <option>ko-KR</option>
+          <option>es-ES</option>
+          <option>en-IN</option>
+          <option>hi-IN</option>
+          <option>ar-SA</option>
+          <option>ru-RU</option>
+          <option>zh-CN</option>
+          <option>nl-NL</option>
+          <option>id-ID</option>
+          <option>ta-IN</option>
+          <option>fa-IR</option>
+          <option>en-IE</option>
+          <option>en-AB</option>
+          <option>en-WL</option>
+          <option>pt-PT</option>
+          <option>te-IN</option>
+          <option>tr-TR</option>
+          <option>de-CH</option>
+          <option>he-IL</option>
+          <option>ms-MY</option>
+          <option>ja-JP</option>
+          <option>ar-AE</option>
+        </select>
+        <small>The language code of the audio file content</small>
 
         <label for=s3_file>File</label>
         <!-- Any POST data after the `file` field is ignored by S3 -->

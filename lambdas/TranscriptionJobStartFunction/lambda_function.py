@@ -47,11 +47,12 @@ def lambda_handler(event, context):
 
     media_metadata = get_s3_metadata(bucket_name, object_key)
     notification_email = media_metadata['email']
+    language_code = media_metadata['languagecode']
     max_speaker_labels = int(media_metadata['maxspeakerlabels'])
 
     transcribe.start_transcription_job(
         TranscriptionJobName=f"{transcription_job_name}",
-        LanguageCode='en-US',
+        LanguageCode=language_code,
         MediaFormat=get_media_format(object_key),
         Media={
             'MediaFileUri': f"https://{s3_host}/{bucket_name}/{object_key}"

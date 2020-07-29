@@ -48,6 +48,7 @@ def s3_post_policy(signing_time, ttl=60):
 
             ["starts-with", "$success_action_redirect", ""],
             ["starts-with", "$x-amz-meta-email", ""],
+            ["starts-with", "$x-amz-meta-languagecode", ""],
             ["starts-with", "$x-amz-meta-maxspeakerlabels", ""],
             ["starts-with", "$key", "audio/"],
             ["starts-with", "$Content-Type", "audio/"]
