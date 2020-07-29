@@ -173,6 +173,13 @@
         <input name=x-amz-meta-maxspeakerlabels id=s3_amz_meta_maxspeakerlabels type=number min=2 max=10 value=2>
         <small>The number of unique voices in your audio, with a maximum of <strong>10</strong>. Setting this correctly helps the voice recognition software identify speakers more accurately.</small>
 
+        <label for=s3_amz_meta_channelidentification>Channels</label>
+        <select name=x-amz-meta-channelidentification id=s3_amz_meta_channelidentification>
+          <option>Off</option>
+          <option>On</option>
+        </select>
+        <small>Set channels to <strong>On</strong> if each audio channel in the file contains only one speaker. When channels is <strong>On</strong>, the transcript will not contain speaker labels. If you're not sure, leave it <strong>Off</strong>.</small>
+
         <label for=s3_amz_meta_languagecode>Language</label>
         <select name=x-amz-meta-languagecode id=s3_amz_meta_languagecode>
           <option>en-US</option>
