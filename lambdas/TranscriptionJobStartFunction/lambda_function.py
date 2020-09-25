@@ -16,16 +16,28 @@ s3_host = f"s3-{os.environ['AWS_REGION']}.amazonaws.com"
 
 
 def get_media_format(path):
-    if re.search('.mp3$', path) is not None:
+    if re.search('.wav$', path) is not None:
+        return 'wav'
+    elif re.search('.flac$', path) is not None:
+        return 'flac'
+    elif re.search('.amr$', path) is not None:
+        return 'amr'
+    elif re.search('.3ga$', path) is not None:
+        return 'amr'
+    elif re.search('.mp3$', path) is not None:
         return 'mp3'
     elif re.search('.mp4$', path) is not None:
         return 'mp4'
     elif re.search('.m4a$', path) is not None:
         return 'mp4'
-    elif re.search('.wav$', path) is not None:
-        return 'wav'
-    elif re.search('.flac$', path) is not None:
-        return 'flac'
+    elif re.search('.oga$', path) is not None:
+        return 'ogg'
+    elif re.search('.ogg$', path) is not None:
+        return 'ogg'
+    elif re.search('.opus$', path) is not None:
+        return 'ogg'
+    elif re.search('.webm$', path) is not None:
+        return 'webm'
     else:
         return 'mp3'
 

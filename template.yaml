@@ -82,6 +82,44 @@ Resources:
           NOTIFICATION_SOURCE_EMAIL_ADDRESS: !Ref NotificationSourceEmailAddress
           TRANSCRIPTIONS_OUTPUT_BUCKET: !Ref TranscriptionsBucket
       Events:
+        WavCreated:
+          Properties:
+            Bucket: !Ref MediaBucket
+            Events: s3:ObjectCreated:*
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: suffix
+                    Value: .wav
+          Type: S3
+        FlacCreated:
+          Properties:
+            Bucket: !Ref MediaBucket
+            Events: s3:ObjectCreated:*
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: suffix
+                    Value: .flac
+          Type: S3
+        AmrCreated:
+          Properties:
+            Bucket: !Ref MediaBucket
+            Events: s3:ObjectCreated:*
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: suffix
+                    Value: .amr
+        3gaCreated:
+          Properties:
+            Bucket: !Ref MediaBucket
+            Events: s3:ObjectCreated:*
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: suffix
+                    Value: .3ga
         Mp3Created:
           Properties:
             Bucket: !Ref MediaBucket
@@ -112,7 +150,7 @@ Resources:
                   - Name: suffix
                     Value: .m4a
           Type: S3
-        WavCreated:
+        OgaCreated:
           Properties:
             Bucket: !Ref MediaBucket
             Events: s3:ObjectCreated:*
@@ -120,9 +158,8 @@ Resources:
               S3Key:
                 Rules:
                   - Name: suffix
-                    Value: .wav
-          Type: S3
-        FlacCreated:
+                    Value: .oga
+        OggCreated:
           Properties:
             Bucket: !Ref MediaBucket
             Events: s3:ObjectCreated:*
@@ -130,8 +167,25 @@ Resources:
               S3Key:
                 Rules:
                   - Name: suffix
-                    Value: .flac
-          Type: S3
+                    Value: .ogg
+        OpusCreated:
+          Properties:
+            Bucket: !Ref MediaBucket
+            Events: s3:ObjectCreated:*
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: suffix
+                    Value: .opus
+        WebmCreated:
+          Properties:
+            Bucket: !Ref MediaBucket
+            Events: s3:ObjectCreated:*
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: suffix
+                    Value: .webm
       Handler: lambda_function.lambda_handler
       MemorySize: 128
       Role: !GetAtt TranscriptionJobStartFunctionIamRole.Arn
