@@ -68,19 +68,27 @@ def lambda_handler(event, context):
         'ShowSpeakerLabels': channel_identification != 'On'
     }
 
+    job_params = {
+        'TranscriptionJobName': f"{transcription_job_name}",
+        'MediaFormat': get_media_format(object_key),
+        'Media': {
+            'MediaFileUri': f"https://{s3_host}/{bucket_name}/{object_key}"
+        },
+        'Settings': transcription_job_settings,
+        'OutputBucketName': os.environ['TRANSCRIPTIONS_OUTPUT_BUCKET'],
+    }
+
+    if language_code == 'IdentifyLanguage':
+        job_params['IdentifyLanguage'] = True
+    else:
+        job_params['LanguageCode'] = language_code
+
     if channel_identification != 'On':
         transcription_job_settings['MaxSpeakerLabels'] = max_speaker_labels
 
-    transcribe.start_transcription_job(
-        TranscriptionJobName=f"{transcription_job_name}",
-        LanguageCode=language_code,
-        MediaFormat=get_media_format(object_key),
-        Media={
-            'MediaFileUri': f"https://{s3_host}/{bucket_name}/{object_key}"
-        },
-        Settings=transcription_job_settings,
-        OutputBucketName=os.environ['TRANSCRIPTIONS_OUTPUT_BUCKET'],
-    )
+    print(f"Job parameters: {job_params}")
+
+    transcribe.start_transcription_job(**job_params)
 
     ses.send_email(
         Source=os.environ['NOTIFICATION_SOURCE_EMAIL_ADDRESS'],
