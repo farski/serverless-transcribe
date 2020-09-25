@@ -111,6 +111,7 @@ Resources:
                 Rules:
                   - Name: suffix
                     Value: .amr
+          Type: S3
         3gaCreated:
           Properties:
             Bucket: !Ref MediaBucket
@@ -120,6 +121,7 @@ Resources:
                 Rules:
                   - Name: suffix
                     Value: .3ga
+          Type: S3
         Mp3Created:
           Properties:
             Bucket: !Ref MediaBucket
@@ -159,6 +161,7 @@ Resources:
                 Rules:
                   - Name: suffix
                     Value: .oga
+          Type: S3
         OggCreated:
           Properties:
             Bucket: !Ref MediaBucket
@@ -168,6 +171,7 @@ Resources:
                 Rules:
                   - Name: suffix
                     Value: .ogg
+          Type: S3
         OpusCreated:
           Properties:
             Bucket: !Ref MediaBucket
@@ -177,6 +181,7 @@ Resources:
                 Rules:
                   - Name: suffix
                     Value: .opus
+          Type: S3
         WebmCreated:
           Properties:
             Bucket: !Ref MediaBucket
@@ -186,6 +191,7 @@ Resources:
                 Rules:
                   - Name: suffix
                     Value: .webm
+          Type: S3
       Handler: lambda_function.lambda_handler
       MemorySize: 128
       Role: !GetAtt TranscriptionJobStartFunctionIamRole.Arn
