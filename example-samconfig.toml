@@ -7,5 +7,6 @@ s3_bucket = "my-s3-buckey"
 s3_prefix = "my-s3-prefix"
 region = "us-east-1"
 # profile = "my-aws-profile"
+confirm_changeset = true
 capabilities = "CAPABILITY_IAM"
 parameter_overrides = "BasicAuthUsername=myUserName BasicAuthPassword=myPassword NotificationSourceEmailAddress=myAddress@example.com"
