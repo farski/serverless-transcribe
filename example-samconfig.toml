@@ -1,0 +1,11 @@
+version = 0.1
+[default]
+[default.deploy]
+[default.deploy.parameters]
+stack_name = "my-stack-name"
+s3_bucket = "my-s3-buckey"
+s3_prefix = "my-s3-prefix"
+region = "us-east-1"
+# profile = "my-aws-profile"
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "BasicAuthUsername=myUserName BasicAuthPassword=myPassword NotificationSourceEmailAddress=myAddress@example.com"
