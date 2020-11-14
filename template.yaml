@@ -248,6 +248,11 @@ Resources:
                   - "*"
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+  TranscriptionJobStartFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${TranscriptionJobStartFunction}
+      RetentionInDays: 14
   TranscriptionJobStartFunctionIamRoleMediaBucketPolicy:
     Type: AWS::IAM::Policy
     Properties:
@@ -333,6 +338,11 @@ Resources:
                   - "*"
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+  TranscriptionJobStateChangeFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${TranscriptionJobStateChangeFunction}
+      RetentionInDays: 14
   TranscriptionJobEventsRuleLambdaPermission:
     Type: AWS::Lambda::Permission
     Properties:
@@ -398,6 +408,11 @@ Resources:
       Path: "/"
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+  WebsiteApiFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${WebsiteApiFunction}
+      RetentionInDays: 14
   WebsiteApi:
     Type: AWS::ApiGateway::RestApi
     Properties:
@@ -483,6 +498,11 @@ Resources:
       Path: "/"
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+  StaticWebsiteFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${StaticWebsiteFunction}
+      RetentionInDays: 14
   StaticWebsiteResource:
     Type: AWS::ApiGateway::Resource
     Properties:
@@ -540,6 +560,11 @@ Resources:
       Path: "/"
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+  StaticWebsiteAuthorizerFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${StaticWebsiteAuthorizerFunction}
+      RetentionInDays: 14
   StaticWebsiteAuthorizer:
     Type: AWS::ApiGateway::Authorizer
     Properties:
