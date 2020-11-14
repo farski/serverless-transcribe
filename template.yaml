@@ -13,6 +13,7 @@ Resources:
   TranscriptionsBucket:
     Type: AWS::S3::Bucket
     DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
     Properties:
       LifecycleConfiguration:
         Rules:
@@ -24,6 +25,7 @@ Resources:
   MediaBucket:
     Type: AWS::S3::Bucket
     DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
     Properties:
       CorsConfiguration:
         CorsRules:
