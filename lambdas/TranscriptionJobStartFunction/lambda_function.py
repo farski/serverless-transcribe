@@ -76,6 +76,12 @@ def lambda_handler(event, context):
         },
         'Settings': transcription_job_settings,
         'OutputBucketName': os.environ['TRANSCRIPTIONS_OUTPUT_BUCKET'],
+        'Tags': [
+            {
+                'Key': 'Project',
+                'Value': 'serverless-transcribe'
+            }
+        ]
     }
 
     if language_code == 'IdentifyLanguage':
@@ -87,12 +93,10 @@ def lambda_handler(event, context):
         transcription_job_settings['MaxSpeakerLabels'] = max_speaker_labels
 
     if os.environ['JOB_TAG_KEY'] and os.environ['JOB_TAG_VALUE']:
-        job_params['Tags'] = [
-            {
+        job_params['Tags'].append({
                 'Key': os.environ['JOB_TAG_KEY'],
                 'Value': os.environ['JOB_TAG_VALUE']
-            }
-        ]
+        })
 
     print(f"Job parameters: {job_params}")
 

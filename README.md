@@ -18,7 +18,7 @@ Amazon Transcribe currently has file limits of 4 hours and 2 GB.
 
 The cost of running and using this project are almost entirely based on usage. Media files uploaded to S3 are set to expire after one day, and the resulting files in the transcripts bucket expire after 30 days. The Lambda functions have no fixed costs, so you will only be charged when they are invoked. Amazon Transcribe is "[pay-as-you-go](https://aws.amazon.com/transcribe/pricing/) based on the seconds of audio transcribed per month".
 
-Most resources created from the CloudFormation template include a `Project` resource tag, which you can use for cost allocation. Unfortunately Amazon Transcribe jobs cannot be tracked this way.
+Most resources created from the CloudFormation template include a `Project` resource tag, which you can use for cost allocation. Transcription jobs also include this tag, and can include an optional tag defined using stack parameters.
 
 ## How to Use
 
