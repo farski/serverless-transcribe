@@ -86,6 +86,14 @@ def lambda_handler(event, context):
     if channel_identification != 'On':
         transcription_job_settings['MaxSpeakerLabels'] = max_speaker_labels
 
+    if os.environ['JOB_TAG_KEY'] and os.environ['JOB_TAG_VALUE']:
+        job_params['Tags'] = [
+            {
+                'Key': os.environ['JOB_TAG_KEY'],
+                'Value': os.environ['JOB_TAG_VALUE']
+            }
+        ]
+
     print(f"Job parameters: {job_params}")
 
     transcribe.start_transcription_job(**job_params)

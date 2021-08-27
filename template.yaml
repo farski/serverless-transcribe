@@ -9,6 +9,10 @@ Parameters:
     Type: String
   NotificationSourceEmailAddress:
     Type: String
+  JobTagKey:
+    Type: String
+  JobTagValue:
+    Type: String
 Resources:
   TranscriptionsBucket:
     Type: AWS::S3::Bucket
@@ -81,6 +85,8 @@ Resources:
         Starts transcription jobs when triggered by S3 events
       Environment:
         Variables:
+          JOB_TAG_KEY: !Ref JobTagKey
+          JOB_TAG_VALUE: !Ref JobTagValue
           NOTIFICATION_SOURCE_EMAIL_ADDRESS: !Ref NotificationSourceEmailAddress
           TRANSCRIPTIONS_OUTPUT_BUCKET: !Ref TranscriptionsBucket
       Events:
