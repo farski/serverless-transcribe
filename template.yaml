@@ -1,7 +1,9 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
-Description: >
+
+Description: >-
   Easy serverless Amazon Trascribe
+
 Parameters:
   BasicAuthUsername:
     Type: String
@@ -13,6 +15,10 @@ Parameters:
     Type: String
   JobTagValue:
     Type: String
+  TranscriptionsExpirationInDays:
+    Type: Number
+    Default: 30
+
 Resources:
   TranscriptionsBucket:
     Type: AWS::S3::Bucket
@@ -21,11 +27,12 @@ Resources:
     Properties:
       LifecycleConfiguration:
         Rules:
-          - ExpirationInDays: 30
+          - ExpirationInDays: !Ref TranscriptionsExpirationInDays
             Status: Enabled
       Tags:
         - Key: Project
           Value: serverless-transcribe
+
   MediaBucket:
     Type: AWS::S3::Bucket
     DeletionPolicy: Retain
@@ -33,12 +40,9 @@ Resources:
     Properties:
       CorsConfiguration:
         CorsRules:
-          - AllowedHeaders:
-              - "*"
-            AllowedMethods:
-              - "POST"
-            AllowedOrigins:
-              - "*"
+          - AllowedHeaders: ["*"]
+            AllowedMethods: [POST]
+            AllowedOrigins: ["*"]
       LifecycleConfiguration:
         Rules:
           - ExpirationInDays: 1
@@ -46,21 +50,24 @@ Resources:
       Tags:
         - Key: Project
           Value: serverless-transcribe
+
   MediaBucketAccessIamUser:
     Type: AWS::IAM::User
   MediaBucketAccessIamUserPolicy:
     Type: AWS::IAM::Policy
     Properties:
       PolicyDocument:
-        Version: "2012-10-17"
         Statement:
-          - Effect: "Allow"
-            Action:
-              - "s3:*"
-            Resource:
-              - !GetAtt MediaBucket.Arn
-              - !Sub ${MediaBucket.Arn}/*
-      PolicyName: !Sub ${AWS::StackName}-MediaBucketUploadSigningPolicy
+          - Action: s3:*
+            Effect: Allow
+            Resource: !GetAtt MediaBucket.Arn
+            Sid: AllowAllBucketActions
+          - Action: s3:*
+            Effect: Allow
+            Resource: !Sub ${MediaBucket.Arn}/*
+            Sid: AllowAllObjectActions
+        Version: "2012-10-17"
+      PolicyName: MediaBucket
       Users:
         - !Ref MediaBucketAccessIamUser
   MediaBucketAccessIamUserAccessKey:
@@ -68,6 +75,7 @@ Resources:
     Properties:
       Status: Active
       UserName: !Ref MediaBucketAccessIamUser
+
   # Transcription Job Start
   TranscriptionJobStartFunctionMediaBucketPermission:
     Type: AWS::Lambda::Permission
@@ -81,7 +89,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: src/transcription-job-start/
-      Description: >
+      Description: >-
         Starts transcription jobs when triggered by S3 events
       Environment:
         Variables:
@@ -207,74 +215,81 @@ Resources:
       Tags:
         Project: serverless-transcribe
       Timeout: 8
-  TranscriptionJobStartFunctionIamRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - lambda.amazonaws.com
-            Action:
-              - sts:AssumeRole
-      Path: "/"
-      Policies:
-        - PolicyName: TranscriptionsBucketWriteAccess
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Effect: Allow
-                Action:
-                  - s3:Get*
-                  - s3:List*
-                  - s3:Put*
-                Resource:
-                  - !GetAtt TranscriptionsBucket.Arn
-                  - !Sub ${TranscriptionsBucket.Arn}/*
-        - PolicyName: Transcribe
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Effect: Allow
-                Action:
-                  - transcribe:GetTranscriptionJob
-                  - transcribe:StartTranscriptionJob
-                Resource:
-                  - "*"
-        - PolicyName: SESSendEmail
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Effect: Allow
-                Action:
-                  - ses:SendEmail
-                Resource:
-                  - "*"
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
   TranscriptionJobStartFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub /aws/lambda/${TranscriptionJobStartFunction}
       RetentionInDays: 14
+      Tags:
+        - Key: Project
+          Value: serverless-transcribe
+  TranscriptionJobStartFunctionIamRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyDocument:
+            Statement:
+              - Action:
+                  - s3:Get*
+                  - s3:List*
+                  - s3:Put*
+                Effect: Allow
+                Resource: !GetAtt TranscriptionsBucket.Arn
+                Sid: AllowBucketActions
+              - Action:
+                  - s3:Get*
+                  - s3:List*
+                  - s3:Put*
+                Effect: Allow
+                Resource: !Sub ${TranscriptionsBucket.Arn}/*
+                Sid: AllowObjectActions
+            Version: "2012-10-17"
+          PolicyName: TranscriptionsBucket
+        - PolicyDocument:
+            Statement:
+              - Action:
+                  - transcribe:GetTranscriptionJob
+                  - transcribe:StartTranscriptionJob
+                Effect: Allow
+                Resource: "*"
+                Sid: AllowTranscriptionStart
+            Version: "2012-10-17"
+          PolicyName: Transcribe
+        - PolicyDocument:
+            Statement:
+              - Action: ses:SendEmail
+                Effect: Allow
+                Resource: "*"
+                Sid: AllowSendEmail
+            Version: "2012-10-17"
+          PolicyName: SES
   TranscriptionJobStartFunctionIamRoleMediaBucketPolicy:
     Type: AWS::IAM::Policy
     Properties:
       PolicyDocument:
-        Version: "2012-10-17"
         Statement:
-          - Effect: Allow
-            Action:
-              - s3:ListBucket
-              - s3:GetObject
-            Resource:
-              - !GetAtt MediaBucket.Arn
-              - !Sub ${MediaBucket.Arn}/*
+          - Action: s3:GetObject
+            Effect: Allow
+            Resource: !Sub ${MediaBucket.Arn}/*
+            Sid: AllowMediaObjectRead
+          - Action: s3:ListBucket
+            Effect: Allow
+            Resource: !GetAtt MediaBucket.Arn
+            Sid: AllowMediaBucketList
+        Version: "2012-10-17"
       PolicyName: !Sub ${AWS::StackName}-JobStartMediaBucketReadOnly
       Roles:
         - !Ref TranscriptionJobStartFunctionIamRole
+
   # Transcription Job Events
   TranscriptionJobStateChangeFunction:
     Type: AWS::Serverless::Function
@@ -285,100 +300,67 @@ Resources:
         Variables:
           MEDIA_BUCKET_NAME: !Ref MediaBucket
           NOTIFICATION_SOURCE_EMAIL_ADDRESS: !Ref NotificationSourceEmailAddress
+      Events:
+        TranscribeJobs:
+          Properties:
+            Pattern:
+              source:
+                - aws.transcribe
+              detail-type:
+                - Transcribe Job State Change
+              detail:
+                TranscriptionJobStatus:
+                  - COMPLETED
+                  - FAILED
+            Target:
+              Id: !Sub ${AWS::StackName}.Transcribe.JobState
+          Type: EventBridgeRule
       Handler: lambda_function.lambda_handler
       MemorySize: 256
-      Role: !GetAtt TranscriptionJobStateChangeFunctionIamRole.Arn
+      Policies:
+        - Statement:
+            - Action: ses:SendEmail
+              Effect: Allow
+              Resource: "*"
+              Sid: AllowSendEmail
+          Version: "2012-10-17"
+        - Statement:
+            - Action: transcribe:GetTranscriptionJob
+              Effect: Allow
+              Resource: "*"
+              Sid: AllowTranscriptionJobRead
+          Version: "2012-10-17"
+        - Statement:
+            - Action: s3:GetObject
+              Effect: Allow
+              Resource: !Sub ${TranscriptionsBucket.Arn}/*
+              Sid: AllowTranscriptionObjectRead
+          Version: "2012-10-17"
+        - Statement:
+            - Action: s3:GetObject
+              Effect: Allow
+              Resource: !Sub ${MediaBucket.Arn}/*
+              Sid: AllowMediaObjectRead
+          Version: "2012-10-17"
       Runtime: python3.9
       Tags:
         Project: serverless-transcribe
       Timeout: 16
-  TranscriptionJobStateChangeFunctionIamRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - lambda.amazonaws.com
-            Action:
-              - sts:AssumeRole
-      Path: "/"
-      Policies:
-        - PolicyName: MediaBucketReadOnly
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Effect: Allow
-                Action:
-                  - s3:GetObject
-                Resource:
-                  - !Sub ${MediaBucket.Arn}/*
-        - PolicyName: TranscriptionsBucketReadAccess
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Effect: Allow
-                Action:
-                  - s3:GetObject
-                Resource:
-                  - !Sub ${TranscriptionsBucket.Arn}/*
-        - PolicyName: Transcribe
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Effect: Allow
-                Action:
-                  - transcribe:GetTranscriptionJob
-                Resource:
-                  - "*"
-        - PolicyName: SESSendEmail
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Effect: Allow
-                Action:
-                  - ses:SendEmail
-                Resource:
-                  - "*"
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
   TranscriptionJobStateChangeFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub /aws/lambda/${TranscriptionJobStateChangeFunction}
       RetentionInDays: 14
-  TranscriptionJobEventsRuleLambdaPermission:
-    Type: AWS::Lambda::Permission
-    Properties:
-      Action: lambda:InvokeFunction
-      FunctionName: !GetAtt TranscriptionJobStateChangeFunction.Arn
-      Principal: events.amazonaws.com
-      SourceArn: !GetAtt TranscriptionJobEventsRule.Arn
-  TranscriptionJobEventsRule:
-    Type: AWS::Events::Rule
-    Properties:
-      Description: Monitors Amazon Transcribe for job state changes
-      EventPattern:
-        source:
-          - aws.transcribe
-        detail-type:
-          - Transcribe Job State Change
-        detail:
-          TranscriptionJobStatus:
-            - COMPLETED
-            - FAILED
-      State: ENABLED
-      Targets:
-        - Arn: !GetAtt TranscriptionJobStateChangeFunction.Arn
-          Id: !Sub ${AWS::StackName}.Transcribe.JobState
+      Tags:
+        - Key: Project
+          Value: serverless-transcribe
+
   # Website API
   WebsiteApiFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: src/website-api/
-      Description: >
+      Description: >-
         Provides a simple API for browser-based S3 uploading
       Environment:
         Variables:
@@ -388,31 +370,19 @@ Resources:
           UPLOAD_SECRET_ACCESS_KEY: !GetAtt MediaBucketAccessIamUserAccessKey.SecretAccessKey
       Handler: lambda_function.lambda_handler
       MemorySize: 128
-      Role: !GetAtt WebsiteApiFunctionIamRole.Arn
       Runtime: python3.9
       Tags:
         Project: serverless-transcribe
       Timeout: 3
-  WebsiteApiFunctionIamRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - lambda.amazonaws.com
-            Action:
-              - sts:AssumeRole
-      Path: "/"
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
   WebsiteApiFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub /aws/lambda/${WebsiteApiFunction}
       RetentionInDays: 14
+      Tags:
+        - Key: Project
+          Value: serverless-transcribe
+
   WebsiteApi:
     Type: AWS::ApiGateway::RestApi
     Properties:
@@ -468,41 +438,29 @@ Resources:
       Action: lambda:InvokeFunction
       FunctionName: !GetAtt WebsiteApiFunction.Arn
       Principal: apigateway.amazonaws.com
-      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${WebsiteApi}/${WebsiteApiStage}/*"
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${WebsiteApi}/${WebsiteApiStage}/*
+
   # Static Website
   StaticWebsiteFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: src/static-website/
-      Description: >
+      Description: >-
         Generates a basic front end for uploading files to S3
       Handler: lambda_function.lambda_handler
       MemorySize: 128
-      Role: !GetAtt StaticWebsiteFunctionIamRole.Arn
       Runtime: python3.9
       Tags:
         Project: serverless-transcribe
       Timeout: 3
-  StaticWebsiteFunctionIamRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - lambda.amazonaws.com
-            Action:
-              - sts:AssumeRole
-      Path: "/"
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
   StaticWebsiteFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub /aws/lambda/${StaticWebsiteFunction}
       RetentionInDays: 14
+      Tags:
+        - Key: Project
+          Value: serverless-transcribe
   StaticWebsiteResource:
     Type: AWS::ApiGateway::Resource
     Properties:
@@ -527,12 +485,13 @@ Resources:
       Action: lambda:InvokeFunction
       FunctionName: !GetAtt StaticWebsiteFunction.Arn
       Principal: apigateway.amazonaws.com
-      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${WebsiteApi}/${WebsiteApiStage}/*"
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${WebsiteApi}/${WebsiteApiStage}/*
+
   StaticWebsiteAuthorizerFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: src/static-website-authorizer/
-      Description: >
+      Description: >-
         Authorizer for S3 file upload front end
       Environment:
         Variables:
@@ -540,31 +499,18 @@ Resources:
           BASIC_AUTH_PASSWORD: !Ref BasicAuthPassword
       Handler: lambda_function.lambda_handler
       MemorySize: 128
-      Role: !GetAtt StaticWebsiteAuthorizerFunctionIamRole.Arn
       Runtime: python3.9
       Tags:
         Project: serverless-transcribe
       Timeout: 3
-  StaticWebsiteAuthorizerFunctionIamRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - lambda.amazonaws.com
-            Action:
-              - sts:AssumeRole
-      Path: "/"
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
   StaticWebsiteAuthorizerFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub /aws/lambda/${StaticWebsiteAuthorizerFunction}
       RetentionInDays: 14
+      Tags:
+        - Key: Project
+          Value: serverless-transcribe
   StaticWebsiteAuthorizer:
     Type: AWS::ApiGateway::Authorizer
     Properties:
@@ -579,27 +525,22 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: "2012-10-17"
         Statement:
-          - Effect: Allow
+          - Action: sts:AssumeRole
+            Effect: Allow
             Principal:
-              Service:
-                - apigateway.amazonaws.com
-            Action:
-              - sts:AssumeRole
-      Path: "/"
+              Service: apigateway.amazonaws.com
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
       Policies:
         - PolicyName: AuthorizerLambdaInvoke
           PolicyDocument:
-            Version: "2012-10-17"
             Statement:
-              - Effect: Allow
-                Action:
-                  - lambda:invokeFunction
-                Resource:
-                  - !GetAtt StaticWebsiteAuthorizerFunction.Arn
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+              - Action: lambda:invokeFunction
+                Effect: Allow
+                Resource: !GetAtt StaticWebsiteAuthorizerFunction.Arn
+            Version: "2012-10-17"
 Outputs:
   UploadWebpageUrl:
     Description: The URL for the webpage used to upload media
