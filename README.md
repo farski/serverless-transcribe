@@ -26,7 +26,7 @@ The project is organized using a [SAM](https://aws.amazon.com/serverless/sam/) C
 
 ### Requirements
 
-- The stack must be launched in an AWS region that supports [SES](https://aws.amazon.com/ses/). There aren't [many of these](https://docs.aws.amazon.com/general/latest/gr/rande.html#ses_region), unfortunately. The addresses that SES will send to and from are determined by your SES domain verification and sandboxing status.
+- The stack must be launched in an AWS [region](https://docs.aws.amazon.com/general/latest/gr/ses.html) that supports [SES](https://aws.amazon.com/ses/). The addresses that SES will send to and from are determined by your SES domain verification and sandboxing status.
 
 ### Using the SAM CLI to deploy
 
