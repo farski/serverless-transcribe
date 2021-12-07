@@ -80,7 +80,7 @@ Resources:
   TranscriptionJobStartFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: lambdas/TranscriptionJobStartFunction/
+      CodeUri: src/transcription-job-start/
       Description: >
         Starts transcription jobs when triggered by S3 events
       Environment:
@@ -279,7 +279,7 @@ Resources:
   TranscriptionJobStateChangeFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: lambdas/TranscriptionJobStateChangeFunction/
+      CodeUri: src/transcription-job-state-change/
       Description: Handles transcription job state change events
       Environment:
         Variables:
@@ -383,7 +383,7 @@ Resources:
   WebsiteApiFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: lambdas/WebsiteApiFunction/
+      CodeUri: src/website-api/
       Description: >
         Provides a simple API for browser-based S3 uploading
       Environment:
@@ -479,7 +479,7 @@ Resources:
   StaticWebsiteFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: lambdas/StaticWebsiteFunction/
+      CodeUri: src/static-website/
       Description: >
         Generates a basic front end for uploading files to S3
       Handler: lambda_function.lambda_handler
@@ -537,7 +537,7 @@ Resources:
   StaticWebsiteAuthorizerFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: lambdas/StaticWebsiteAuthorizerFunction/
+      CodeUri: src/static-website-authorizer/
       Description: >
         Authorizer for S3 file upload front end
       Environment:
