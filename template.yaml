@@ -161,7 +161,7 @@ Resources:
             Version: "2012-10-17"
 
   # When the API Gateway returns an UNAUTHORIZED response (due to lack of an
-  # Authorization header in the request, as defined by the authorizer's
+  # Authorization header in the request, as required by the authorizer's
   # identity source), the gateway response will transform the response to
   # include a WWW-Authenticate header, which prompts browsers to display an
   # HTTP Basic Auth form.
