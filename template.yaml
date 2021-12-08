@@ -273,13 +273,6 @@ Resources:
       SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${Api}/${ApiStage}/*
 
   # Transcription Job Start
-  # TranscriptionJobStartFunctionMediaBucketPermission:
-  #   Type: AWS::Lambda::Permission
-  #   Properties:
-  #     Action: lambda:InvokeFunction
-  #     FunctionName: !GetAtt TranscriptionJobStartFunction.Arn
-  #     Principal: s3.amazonaws.com
-  #     SourceArn: !GetAtt MediaBucket.Arn
   TranscriptionJobStartFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -554,4 +547,4 @@ Resources:
 Outputs:
   UploadWebpageUrl:
     Description: The URL for the webpage used to upload media
-    Value: !Sub "https://${Api}.execute-api.${AWS::Region}.amazonaws.com/${ApiStage}
+    Value: !Sub https://${Api}.execute-api.${AWS::Region}.amazonaws.com/${ApiStage}
