@@ -1,7 +1,8 @@
 # This function is triggered by API Gateway as an authorizer. It uses the HTTP
 # basic auth Authorization header to permit access to API Gateway methods by
 # returning a policy document when the credentials match those defined as stack
-# parameters.
+# parameters. The policy grants access to all paths belonging to the API
+# Gateway.
 
 import os
 import base64
@@ -26,13 +27,13 @@ def lambda_handler(event, context):
 
     return {
         'policyDocument': {
-            'Version': '2012-10-17',
             'Statement': [
                 {
                     'Action': 'execute-api:Invoke',
                     'Effect': 'Allow',
-                    'Resource': event['methodArn']
+                    'Resource': f"{event['methodArn'].split('/')[0]}/*"
                 }
-            ]
+            ],
+            'Version': '2012-10-17'
         }
     }
