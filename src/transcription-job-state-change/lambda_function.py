@@ -133,7 +133,7 @@ def lambda_handler(event, context):
     transcription_job_status = event['detail']['TranscriptionJobStatus']
 
     # Get details about the Amazon Transcribe transcription job that triggered
-    # the CloudWatch Event rule.
+    # the EventBridge event.
     transcription_job = get_transcription_job(transcription_job_name)
 
     # Get the S3 URL of the original media file that was sent for transcription
