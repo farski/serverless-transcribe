@@ -8,7 +8,7 @@ Once the project has been launched in [CloudFormation](https://aws.amazon.com/cl
 
 File detection is based on the file extension. Supported extensions are: `.wav`, `.flac`, `.amr`, `.3ga`, `.mp3`, `.mp4`, `.m4a`, `.oga`, `.ogg`, `.opus`, and `.webm`.
 
-Another Lambda function is triggered via [CloudWatch Events](https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/WhatIsCloudWatchEvents.html) when the transcription job completes (or fails). An email is sent to the user who uploaded file with details about the job failure, or a raw transcript that is extracted from the job results.
+Another Lambda function is triggered via [EventBridge event](https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-events.html) when the transcription job completes (or fails). An email is sent to the user who uploaded file with details about the job failure, or a raw transcript that is extracted from the job results.
 
 The webpage is protected by HTTP Basic authentication, with a single set of credentials that you set when launching the stack. This is handled by an authorizer on the [API Gateway](https://aws.amazon.com/api-gateway/), and could be extended to allow for more robust authorization schemes.
 
