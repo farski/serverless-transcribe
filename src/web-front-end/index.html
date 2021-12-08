@@ -74,7 +74,7 @@
     <script>
       function getStuff() {
         return new Promise((resolve, reject) => {
-          const url = `https://${window.location.host}/omega/v1/browser-based-upload`;
+          const url = `https://${window.location.host}/transcribe/v1/browser-based-upload`;
 
           fetch(url)
             .then(response => response.json())

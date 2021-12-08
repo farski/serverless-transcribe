@@ -81,7 +81,7 @@ Resources:
   ApiStage:
     Type: AWS::ApiGateway::Stage
     Properties:
-      StageName: omega
+      StageName: transcribe
       RestApiId: !Ref Api
       DeploymentId: !Ref ApiDeployment
   ApiDeployment:
@@ -252,12 +252,6 @@ Resources:
       Tags:
         - Key: Project
           Value: serverless-transcribe
-  WebFrontEndResource:
-    Type: AWS::ApiGateway::Resource
-    Properties:
-      RestApiId: !Ref Api
-      ParentId: !GetAtt Api.RootResourceId
-      PathPart: upload
   WebFrontEndMethod:
     Type: AWS::ApiGateway::Method
     Properties:
@@ -268,7 +262,7 @@ Resources:
         Type: AWS_PROXY
         IntegrationHttpMethod: POST
         Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${WebFrontEndFunction.Arn}/invocations
-      ResourceId: !Ref WebFrontEndResource
+      ResourceId: !GetAtt Api.RootResourceId
       RestApiId: !Ref Api
   WebFrontEndFunctionPermission:
     Type: AWS::Lambda::Permission
@@ -560,4 +554,4 @@ Resources:
 Outputs:
   UploadWebpageUrl:
     Description: The URL for the webpage used to upload media
-    Value: !Sub "https://${Api}.execute-api.${AWS::Region}.amazonaws.com/${ApiStage}/upload"
+    Value: !Sub "https://${Api}.execute-api.${AWS::Region}.amazonaws.com/${ApiStage}
