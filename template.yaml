@@ -47,7 +47,7 @@ Resources:
           Value: serverless-transcribe
 
   # This user's access key is used to to sign the browser-based S3 upload
-  # requests that the website makes for uploading audio.
+  # requests (via HTTP POST) that the website makes for uploading audio.
   MediaBucketPostObjectRequestSigningUser:
     Type: AWS::IAM::User
   MediaBucketPostObjectRequestSigningUserPolicy:
