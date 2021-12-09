@@ -82,6 +82,11 @@ Resources:
         Rules:
           - ExpirationInDays: !Ref TranscriptionsExpirationInDays
             Status: Enabled
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
       Tags:
         - Key: Project
           Value: serverless-transcribe
@@ -101,6 +106,11 @@ Resources:
         Rules:
           - ExpirationInDays: 1
             Status: Enabled
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
       Tags:
         - Key: Project
           Value: serverless-transcribe
