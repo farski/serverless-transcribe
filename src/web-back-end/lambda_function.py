@@ -12,10 +12,7 @@ import os
 import base64
 import hashlib
 import hmac
-import boto3
 from datetime import datetime, timedelta
-
-sts = boto3.client('sts')
 
 AMZ_ALGORITHM = 'AWS4-HMAC-SHA256'
 
