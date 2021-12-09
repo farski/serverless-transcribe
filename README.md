@@ -1,10 +1,10 @@
 # serverless-transcribe
 
-A simple web UI for [Amazon Transcribe](https://aws.amazon.com/transcribe/). Supports WAV, FLAC, AMR, MP3, MP4, Ogg (Opus), and WebM audio without any fixed costs.
+A simple, serverless web UI for [Amazon Transcribe](https://aws.amazon.com/transcribe/). Supports WAV, FLAC, AMR, MP3, MP4, Ogg (Opus), and WebM audio without any fixed costs.
 
 ## How it Works
 
-Once the project has been launched in [CloudFormation](https://aws.amazon.com/cloudformation/), you will have access to a webpage that allows users to upload audio files. The page uploads the files directly to [S3](https://aws.amazon.com/s3/). The S3 bucket is configured to watch for audio files. When it sees new audio files, an [AWS Lambda](https://aws.amazon.com/lambda/) function is invoked, which starts a transcription job.
+Once the project has been launched in [CloudFormation](https://aws.amazon.com/cloudformation/), you will have access to a webpage that allows users to upload audio files. The page uploads the files [directly](https://docs.aws.amazon.com/AmazonS3/latest/API/sigv4-UsingHTTPPOST.html) to [S3](https://aws.amazon.com/s3/). The S3 bucket is configured to watch for audio files. When it sees new audio files, an [AWS Lambda](https://aws.amazon.com/lambda/) function is invoked, which starts a transcription job.
 
 File detection is based on the file extension. Supported extensions are: `.wav`, `.flac`, `.amr`, `.3ga`, `.mp3`, `.mp4`, `.m4a`, `.oga`, `.ogg`, `.opus`, and `.webm`.
 
