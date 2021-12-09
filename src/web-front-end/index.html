@@ -88,6 +88,7 @@
 
         if (!document.getElementById('s3_policy').value) { return; }
         if (!document.getElementById('s3_amz_signature').value) { return; }
+        if (!document.getElementById('s3_amz_security_token').value) { return; }
         if (!document.getElementById('s3_success_action_redirect').value) { return; }
 
         if (!document.getElementById('s3_object_key').value) { return; }
@@ -144,6 +145,7 @@
       document.getElementById('s3_amz_credential').value = stuff.amz_credential;
       document.getElementById('s3_amz_date').value = stuff.amz_date;
       document.getElementById('s3_amz_signature').value = stuff.signature;
+      document.getElementById('s3_amz_security_token').value = stuff.security_token;
 
       validate();
     })();
@@ -161,6 +163,7 @@
       <input type=hidden name=x-amz-credential id=s3_amz_credential>
       <input type=hidden name=x-amz-date id=s3_amz_date>
       <input type=hidden name=x-amz-signature id=s3_amz_signature>
+      <input type=hidden name=x-amz-security-token id=s3_amz_security_token>
 
       <fieldset>
         <legend>Transcription Details:</legend>

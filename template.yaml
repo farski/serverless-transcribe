@@ -46,28 +46,30 @@ Resources:
         - Key: Project
           Value: serverless-transcribe
 
-  # This user's access key is used to to sign the browser-based S3 upload
+  # This role's access key is used to to sign the browser-based S3 upload
   # requests (via HTTP POST) that the website makes for uploading audio.
-  MediaBucketPostObjectRequestSigningUser:
-    Type: AWS::IAM::User
-  MediaBucketPostObjectRequestSigningUserPolicy:
-    Type: AWS::IAM::Policy
+  MediaBucketPostObjectRequestSigningRole:
+    Type: AWS::IAM::Role
     Properties:
-      PolicyDocument:
+      AssumeRolePolicyDocument:
         Statement:
-          - Action: s3:PutObject
+          - Action: sts:AssumeRole
             Effect: Allow
-            Resource: !Sub ${MediaBucket.Arn}/*
-            Sid: AllowPostObject
+            Principal:
+              AWS: !GetAtt WebBackEndFunctionRole.Arn
         Version: "2012-10-17"
-      PolicyName: MediaBucket
-      Users:
-        - !Ref MediaBucketPostObjectRequestSigningUser
-  MediaBucketPostObjectRequestSigningUserAccessKey:
-    Type: AWS::IAM::AccessKey
-    Properties:
-      Status: Active
-      UserName: !Ref MediaBucketPostObjectRequestSigningUser
+      Policies:
+        - PolicyDocument:
+            Statement:
+              - Action: s3:PutObject
+                Effect: Allow
+                Resource: !Sub ${MediaBucket.Arn}/*
+                Sid: AllowPostObject
+            Version: "2012-10-17"
+          PolicyName: MediaUploadSigning
+      Tags:
+        - Key: Project
+          Value: serverless-transcribe
 
   Api:
     Type: AWS::ApiGateway::RestApi
@@ -175,6 +177,21 @@ Resources:
       StatusCode: "401"
 
   # Web back-end
+  WebBackEndFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Tags:
+        - Key: Project
+          Value: serverless-transcribe
   WebBackEndFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -185,10 +202,10 @@ Resources:
         Variables:
           MEDIA_BUCKET: !Ref MediaBucket
           MEDIA_BUCKET_DOMAIN_NAME: !GetAtt MediaBucket.RegionalDomainName
-          UPLOAD_ACCESS_KEY_ID: !Ref MediaBucketPostObjectRequestSigningUserAccessKey
-          UPLOAD_SECRET_ACCESS_KEY: !GetAtt MediaBucketPostObjectRequestSigningUserAccessKey.SecretAccessKey
+          S3_REQUEST_SIGNING_ROLE_ARN: !GetAtt MediaBucketPostObjectRequestSigningRole.Arn
       Handler: lambda_function.lambda_handler
       MemorySize: 128
+      Role: !GetAtt WebBackEndFunctionRole.Arn
       Runtime: python3.9
       Tags:
         Project: serverless-transcribe
