@@ -4,13 +4,72 @@ Transform: AWS::Serverless-2016-10-31
 Description: >-
   Easy serverless Amazon Trascribe
 
+Metadata:
+  AWS::ServerlessRepo::Application:
+    Name: serverless-transcribe
+    Description: Easy serverless Amazon Trascribe via the web
+    Author: Christopher Kalafarski
+    SpdxLicenseId: MIT
+    LicenseUrl: LICENSE
+    ReadmeUrl: README.md
+    Labels: ['transcribe', 'transcription', 'serverless']
+    HomePageUrl: https://github.com/farski/serverless-transcribe
+    SemanticVersion: 2.1.4
+    SourceCodeUrl: https://github.com/farski/serverless-transcribe
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: Authentication
+        Parameters:
+          - BasicAuthUsername
+          - BasicAuthPassword
+      - Label:
+          default: Configuration
+        Parameters:
+          - NotificationSourceEmailAddress
+          - TranscriptionsExpirationInDays
+          - JobTagKey
+          - JobTagValue
+    ParameterLabels:
+      BasicAuthUsername:
+        default: Username
+      BasicAuthPassword:
+        default: Password
+      NotificationSourceEmailAddress:
+        default: Email FROM
+      JobTagKey:
+        default: Transcribe job tag
+      JobTagValue:
+        default: Transcribe job value
+      TranscriptionsExpirationInDays:
+        default: Days to keep transcriptions
+
 Parameters:
-  BasicAuthUsername: { Type: String }
-  BasicAuthPassword: { Type: String }
-  NotificationSourceEmailAddress: { Type: String }
-  JobTagKey: { Type: String, Default: "" }
-  JobTagValue: { Type: String, Default: "" }
-  TranscriptionsExpirationInDays: { Type: Number, Default: 30 }
+  BasicAuthUsername:
+    Type: String
+    Description: The HTTP Basic authentication username for the website
+  BasicAuthPassword:
+    Type: String
+    Description: The HTTP Basic authentication password for the website
+  NotificationSourceEmailAddress:
+    Type: String
+    Description: Emails sent by the applications will come from this address
+  JobTagKey:
+    Type: String
+    Default: ""
+    Description: >-
+      (optional) Transcription jobs will be tagged with this key
+  JobTagValue:
+    Type: String
+    Default: ""
+    Description: >-
+      (optional) Transcription jobs will be tagged with this value
+  TranscriptionsExpirationInDays:
+    Type: Number
+    Default: 30
+    Description: >-
+      The number of days transcription files should remain in S3 after they are
+      generated
 
 Resources:
   # Final transcriptions will be added to this bucket

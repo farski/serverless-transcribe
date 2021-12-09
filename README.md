@@ -28,9 +28,13 @@ The project is organized using a [SAM](https://aws.amazon.com/serverless/sam/) C
 
 - The stack must be launched in an AWS [region](https://docs.aws.amazon.com/general/latest/gr/ses.html) that supports [SES](https://aws.amazon.com/ses/). The addresses that SES will send to and from are determined by your SES domain verification and sandboxing status.
 
+### Deploying from the AWS Serverless Application Repository
+
+The application can be deployed from the [AWS Serverless Application Repository](https://serverlessrepo.aws.amazon.com/applications/us-east-1/087822466452/serverless-transcribe) into your own AWS account. This is the easiest way to get started with serverless-transcribe.
+
 ### Using the SAM CLI to deploy
 
-Deploying using the  [AWS SAM CLI](https://github.com/awslabs/aws-sam-cli) is the simplest option. Once the CLI is [installed](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-install.html), you can run `sam deploy --guided` in the project directory to deploy the application. (After the first deploy, you can use `sam deploy` if `samconfig.toml` is present in the directory.)
+The app can also be deployed using the  [AWS SAM CLI](https://github.com/awslabs/aws-sam-cli). Once the CLI is [installed](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-install.html), you can run `sam deploy --guided` in the project directory to deploy the application. (After the first deploy, you can use `sam deploy` if `samconfig.toml` is present in the directory.)
 
 Any other deployment method that is compatible with SAM templates would also work.
 
