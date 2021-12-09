@@ -128,7 +128,6 @@ Resources:
       DeploymentId: !Ref ApiDeployment
   ApiDeployment:
     DependsOn:
-      - WebBackEndMethod
       - WebFrontEndMethod
     Type: AWS::ApiGateway::Deployment
     Properties:
@@ -219,62 +218,6 @@ Resources:
       ResponseType: UNAUTHORIZED
       RestApiId: !Ref Api
       StatusCode: "401"
-
-  # Web back-end
-  WebBackEndFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: src/web-back-end/
-      Description: Provides a simple API for browser-based S3 uploading
-      Environment:
-        Variables:
-          MEDIA_BUCKET: !Ref MediaBucket
-          MEDIA_BUCKET_DOMAIN_NAME: !GetAtt MediaBucket.RegionalDomainName
-      Handler: lambda_function.lambda_handler
-      MemorySize: 128
-      Policies:
-        # HTTP POST requests from the form on the upload webpage will be signed
-        # using the temporary key, secret, and token belonging to the Lambda's
-        # execution role, so it needs PutObject access to the S3 bucket where
-        # files are being uploaded.
-        - S3WritePolicy: { BucketName: !Ref MediaBucket }
-      Runtime: python3.9
-      Tags:
-        Project: serverless-transcribe
-      Timeout: 3
-  WebBackEndFunctionLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub /aws/lambda/${WebBackEndFunction}
-      RetentionInDays: 14
-      Tags:
-        - Key: Project
-          Value: serverless-transcribe
-  WebBackEndResource:
-    Type: AWS::ApiGateway::Resource
-    Properties:
-      RestApiId: !Ref Api
-      ParentId: !Ref ApiV1Resource
-      PathPart: browser-based-upload
-  WebBackEndMethod:
-    Type: AWS::ApiGateway::Method
-    Properties:
-      AuthorizationType: CUSTOM
-      AuthorizerId: !Ref ApiAuthorizer
-      HttpMethod: GET
-      Integration:
-        Type: AWS_PROXY
-        IntegrationHttpMethod: POST
-        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${WebBackEndFunction.Arn}/invocations
-      ResourceId: !Ref WebBackEndResource
-      RestApiId: !Ref Api
-  WebBackEndFunctionPermission:
-    Type: AWS::Lambda::Permission
-    Properties:
-      Action: lambda:InvokeFunction
-      FunctionName: !GetAtt WebBackEndFunction.Arn
-      Principal: apigateway.amazonaws.com
-      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${Api}/${ApiStage}/*
 
   # Web front-end
   WebFrontEndFunction:
