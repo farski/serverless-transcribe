@@ -283,6 +283,11 @@ Resources:
       CodeUri: src/web-front-end/
       Description: >-
         Generates a basic front end for uploading files to S3
+      Environment:
+        Variables:
+          API_ID: !Ref Api
+          MEDIA_BUCKET: !Ref MediaBucket
+          MEDIA_BUCKET_DOMAIN_NAME: !GetAtt MediaBucket.RegionalDomainName
       Handler: lambda_function.lambda_handler
       MemorySize: 128
       Runtime: python3.9

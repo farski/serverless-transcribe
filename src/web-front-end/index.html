@@ -72,25 +72,7 @@
       }
     </style>
     <script>
-      function getStuff() {
-        return new Promise((resolve, reject) => {
-          const url = `https://${window.location.host}/transcribe/v1/browser-based-upload`;
-
-          fetch(url)
-            .then(response => response.json())
-            .then(data => resolve(data))
-            .catch(e => reject(e));
-        });
-      }
-
       function validate() {
-        if (!document.getElementById('s3_upload').getAttribute('action')) { return; }
-
-        if (!document.getElementById('s3_policy').value) { return; }
-        if (!document.getElementById('s3_amz_signature').value) { return; }
-        if (!document.getElementById('s3_amz_security_token').value) { return; }
-        if (!document.getElementById('s3_success_action_redirect').value) { return; }
-
         if (!document.getElementById('s3_object_key').value) { return; }
         if (!document.getElementById('s3_object_content_type').value) { return; }
 
@@ -107,8 +89,6 @@
 
       (function () {
         document.addEventListener("DOMContentLoaded", _ => {
-          document.getElementById('s3_success_action_redirect').value = window.location.href;
-
           if (window.location.href.includes('etag=')) {
             document.getElementById('upload_notification').style.visibility = 'visible';
           }
@@ -134,36 +114,21 @@
         language_field.addEventListener('change', ev => { validate(); });
       });
     })();
-
-    (async function () {
-      const stuff = await getStuff();
-
-      document.getElementById('s3_upload').setAttribute('action', `https://${stuff.bucket_domain_name}`);
-
-      document.getElementById('s3_policy').value = stuff.base64_policy;
-      document.getElementById('s3_amz_algorithm').value = stuff.amz_algorithm;
-      document.getElementById('s3_amz_credential').value = stuff.amz_credential;
-      document.getElementById('s3_amz_date').value = stuff.amz_date;
-      document.getElementById('s3_amz_signature').value = stuff.signature;
-      document.getElementById('s3_amz_security_token').value = stuff.security_token;
-
-      validate();
-    })();
     </script>
   </head>
   <body>
     <h3 id=upload_notification>Upload Complete</h3>
     <!-- https://docs.aws.amazon.com/AmazonS3/latest/API/sigv4-HTTPPOSTForms.html -->
-    <form id=s3_upload method=post enctype=multipart/form-data>
+    <form id=s3_upload method=post enctype=multipart/form-data action="https://__bucket_domain_name__/">
       <input type=hidden name=Content-Type id=s3_object_content_type>
       <input type=hidden name=key id=s3_object_key>
-      <input type=hidden name=policy id=s3_policy>
-      <input type=hidden name=success_action_redirect id=s3_success_action_redirect>
-      <input type=hidden name=x-amz-algorithm id=s3_amz_algorithm>
-      <input type=hidden name=x-amz-credential id=s3_amz_credential>
-      <input type=hidden name=x-amz-date id=s3_amz_date>
-      <input type=hidden name=x-amz-signature id=s3_amz_signature>
-      <input type=hidden name=x-amz-security-token id=s3_amz_security_token>
+      <input type=hidden name=policy id=s3_policy value="__s3_policy__">
+      <input type=hidden name=success_action_redirect id=s3_success_action_redirect value="__s3_success_action_redirect__">
+      <input type=hidden name=x-amz-algorithm id=s3_amz_algorithm value="__s3_amz_algorithm__">
+      <input type=hidden name=x-amz-credential id=s3_amz_credential value="__s3_amz_credential__">
+      <input type=hidden name=x-amz-date id=s3_amz_date value="__s3_amz_date__">
+      <input type=hidden name=x-amz-signature id=s3_amz_signature value="__s3_amz_signature__">
+      <input type=hidden name=x-amz-security-token id=s3_amz_security_token value="__s3_amz_security_token__">
 
       <fieldset>
         <legend>Transcription Details:</legend>
