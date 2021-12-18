@@ -274,6 +274,7 @@ Resources:
         Starts transcription jobs when triggered by S3 events
       Environment:
         Variables:
+          API_ID: !Ref Api
           JOB_TAG_KEY: !Ref JobTagKey
           JOB_TAG_VALUE: !Ref JobTagValue
           NOTIFICATION_SOURCE_EMAIL_ADDRESS: !Ref NotificationSourceEmailAddress
@@ -494,6 +495,8 @@ Resources:
                 TranscriptionJobStatus:
                   - COMPLETED
                   - FAILED
+                TranscriptionJobName:
+                  - prefix: !Sub ${Api}-
             Target:
               Id: !Sub ${AWS::StackName}.Transcribe.JobState
           Type: EventBridgeRule

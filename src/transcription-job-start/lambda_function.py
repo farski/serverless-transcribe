@@ -48,7 +48,7 @@ def get_s3_metadata(bucket, key):
 
 def lambda_handler(event, context):
     # Generate a unique name for the job
-    transcription_job_name = uuid.uuid4()
+    transcription_job_name = f"{os.environ['API_ID']}-{uuid.uuid4()}"
 
     bucket_name = event['Records'][0]['s3']['bucket']['name']
     _object_key = event['Records'][0]['s3']['object']['key']

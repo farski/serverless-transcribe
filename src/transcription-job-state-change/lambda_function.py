@@ -140,8 +140,7 @@ def lambda_handler(event, context):
     media_uri = transcription_job['Media']['MediaFileUri']
 
     # Only proceed if the media file is in the media bucket that belongs to
-    # this stack. Otherwise email notifications would be sent for all Amazon
-    # Transcribe jobs in the account
+    # this stack.
     if re.search(media_bucket_name, media_uri).group() is None:
         print('Unknown transcription job')
         return
