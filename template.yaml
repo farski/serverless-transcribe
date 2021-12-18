@@ -233,6 +233,12 @@ Resources:
           MEDIA_BUCKET_DOMAIN_NAME: !GetAtt MediaBucket.RegionalDomainName
       Handler: lambda_function.lambda_handler
       MemorySize: 128
+      Policies:
+        # HTTP POST requests from the form on the upload webpage will be signed
+        # using the temporary key, secret, and token belonging to the Lambda's
+        # execution role, so it needs PutObject access to the S3 bucket where
+        # files are being uploaded.
+        - S3WritePolicy: { BucketName: !Ref MediaBucket }
       Runtime: python3.9
       Tags:
         Project: serverless-transcribe
