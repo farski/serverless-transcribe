@@ -132,12 +132,6 @@ Resources:
     Type: AWS::ApiGateway::Deployment
     Properties:
       RestApiId: !Ref Api
-  ApiV1Resource:
-    Type: AWS::ApiGateway::Resource
-    Properties:
-      RestApiId: !Ref Api
-      ParentId: !GetAtt Api.RootResourceId
-      PathPart: v1
 
   # The authorizer's identity source indicates that an Authorization header
   # is required. When the header is missing, the API Gateway will return an
