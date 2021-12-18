@@ -1,8 +1,7 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 
-Description: >-
-  Easy serverless Amazon Trascribe
+Description: Easy serverless Amazon Trascribe
 
 Metadata:
   AWS::ServerlessRepo::Application:
@@ -14,7 +13,7 @@ Metadata:
     ReadmeUrl: README.md
     Labels: ['transcribe', 'transcription', 'serverless']
     HomePageUrl: https://github.com/farski/serverless-transcribe
-    SemanticVersion: 2.1.4
+    SemanticVersion: 2.2.0
     SourceCodeUrl: https://github.com/farski/serverless-transcribe
   AWS::CloudFormation::Interface:
     ParameterGroups:
@@ -158,8 +157,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: src/api-authorizer/
-      Description: >-
-        Authorizer for S3 file upload front end
+      Description: Authorizer for S3 file upload front end
       Environment:
         Variables:
           BASIC_AUTH_USERNAME: !Ref BasicAuthUsername
