@@ -29,7 +29,7 @@ def get_media_format(path):
     elif re.search('.mp4$', path) is not None:
         return 'mp4'
     elif re.search('.m4a$', path) is not None:
-        return 'mp4'
+        return 'm4a'
     elif re.search('.oga$', path) is not None:
         return 'ogg'
     elif re.search('.ogg$', path) is not None:
