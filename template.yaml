@@ -165,7 +165,7 @@ Resources:
           BASIC_AUTH_PASSWORD: !Ref BasicAuthPassword
       Handler: lambda_function.lambda_handler
       MemorySize: 128
-      Runtime: python3.9
+      Runtime: python3.14
       Tags:
         Project: serverless-transcribe
       Timeout: 3
@@ -233,7 +233,7 @@ Resources:
         # execution role, so it needs PutObject access to the S3 bucket where
         # files are being uploaded.
         - S3WritePolicy: { BucketName: !Ref MediaBucket }
-      Runtime: python3.9
+      Runtime: python3.14
       Tags:
         Project: serverless-transcribe
       Timeout: 3
@@ -394,7 +394,7 @@ Resources:
       Handler: lambda_function.lambda_handler
       MemorySize: 128
       Role: !GetAtt TranscriptionJobStartFunctionIamRole.Arn
-      Runtime: python3.9
+      Runtime: python3.14
       Tags:
         Project: serverless-transcribe
       Timeout: 8
@@ -529,7 +529,7 @@ Resources:
               Resource: !Sub ${MediaBucket.Arn}/*
               Sid: AllowMediaObjectRead
           Version: "2012-10-17"
-      Runtime: python3.9
+      Runtime: python3.14
       Tags:
         Project: serverless-transcribe
       Timeout: 16
