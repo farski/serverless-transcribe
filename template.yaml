@@ -156,6 +156,7 @@ Resources:
   ApiAuthorizerFunction:
     Type: AWS::Serverless::Function
     Properties:
+      Architectures: [arm64]
       CodeUri: src/api-authorizer/
       Description: Authorizer for S3 file upload front end
       Environment:
@@ -215,6 +216,7 @@ Resources:
   WebFrontEndFunction:
     Type: AWS::Serverless::Function
     Properties:
+      Architectures: [arm64]
       CodeUri: src/web-front-end/
       Description: >-
         Generates a basic front end for uploading files to S3
@@ -267,6 +269,7 @@ Resources:
   TranscriptionJobStartFunction:
     Type: AWS::Serverless::Function
     Properties:
+      Architectures: [arm64]
       CodeUri: src/transcription-job-start/
       Description: >-
         Starts transcription jobs when triggered by S3 events
@@ -475,6 +478,7 @@ Resources:
   TranscriptionJobStateChangeFunction:
     Type: AWS::Serverless::Function
     Properties:
+      Architectures: [arm64]
       CodeUri: src/transcription-job-state-change/
       Description: Handles transcription job state change events
       Environment:
